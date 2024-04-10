@@ -1,0 +1,1964 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 10 06:00:19 2023
+
+To do:
+    - handle no nearest neighbors in waviness
+    - print out form and wave values
+    - print out just roughness values. 
+    - turn the final thing into a function that can accept a list of files
+
+@author: benjaminlear
+
+HOW TO USE:
+    1. run the first cell, this will load all needed functions
+    
+    2. Run the second cell, this will bring up a window that will have six plots
+        (will take some time to render). This shows you the raw data, and the splines 
+        for form, waviness, and roughness.  Adjust the smoothness of these until you like them
+        
+    3. Run the third cell, this will show plots and will write a file to the same directory
+        (and with the same name) as your xyz file. 
+"""
+#%% IMPORTS AND FUNCTIONS: RUN FIRST!
+#import bpy
+import numpy as np
+from pathlib import Path
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+#
+#  SUPPORTING PLOTTING
+#
+
+def quickHistTrace(x, limits = None, nbins = None, width = None, mode = "freq", buffer = 0.05):
+    '''
+    Generates just the trace object for histograms that have been generated using a bar chart.
+    If you choose to specify the number of bins or width of the bins, then only specify one.
+
+    Parameters
+    ----------
+    x : 1D array or list
+        The data to be binned.
+    limits : list of two floats, a lower an upper limmit
+        DESCRIPTION. This sets the limits for the lowest and highest bin.
+    nbins : integer
+        DESCRIPTION. The number of desired bins.  If you provide a float, it will be converted to an int.
+    width : float, optional
+        DESCRIPTION. The width of the bins.
+    mode : String, optional
+        Specifies if the bars are reported in frequency or counts. The default is "freq".
+
+
+    Returns
+    -------
+    bars : plotly trace object
+        An instance of a bar trace that can be added to an existing plotly figure object.
+
+    '''
+    try:
+        x = np.array(x)
+    except:
+        raise("the data need to be in a form that can be converted to a numpy array")
+    # we need to start by finding the limits and the bin width
+    
+    # we can start by getting the iqr, which might prove useful for formatting as well
+    q75, q25 = np.percentile(x, [75 ,25]) # find the places for the inner quartile
+    iqr = q75 - q25 # calculate the inner quartile range
+    
+    
+    # first thing: make sure we have a range to work with...
+    if limits == None: # then set the limis as the min and max of x
+        limits = [min(x), max(x)]
+        
+    if nbins != None and width != None:
+        raise("Specify either the number of bins, or the bin width, but not both.")
+    
+    # check to see if the width of the bins was specified...
+    if width == None and nbins == None: # then use the Freedman-Diaconis method to calculate bins
+        width = 2*iqr*len(x)**(-1/3)
+    
+    if nbins != None and width == None: # use the number of bins to determine the width
+        nbins = int(nbins)
+        width = abs(limits[1] - limits[0]) / nbins
+        
+    if nbins != None and width != None:
+        raise("Specify either the number of bins or the bin width, but not both")
+    
+    # the only other option is that width was directly specified.... 
+    # so now we are ready to go...
+    
+    # Define the bin edges using numpy's arange function
+    bin_edges = np.arange(limits[0], limits[1] + width, width)
+    
+    # Use numpy's histogram function to bin the data
+    bin_counts, _ = np.histogram(x, bins=bin_edges)
+    
+    # Calculate the bin centers by averaging each pair of consecutive edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # now we can plot a bar chart that looks like a histogram...
+    if mode == "counts":
+        bars = go.Bar(x = bin_centers, y = bin_counts)
+    if mode == "freq": # we are doing frequency
+        bars = go.Bar(x = bin_centers, y = bin_counts/np.sum(x))
+    
+    return bars
+
+
+def make_surface_plot(xyz, col = 1, row = 1, fig = None, scale = 1):
+    '''
+    Accepts a 2D numpy array, and returns a figure that contains a surface trace of it. This trace can be added to an existing plot.  If no existing plot is provided, then the function will make a new plot and return it. 
+
+    Parameters
+    ----------
+    xyz : 2D numpy array of floats or ints
+        DESCRIPTION.
+    col : int, optional
+        Specifies the col # to put the surface trace in  Useful when passing figures that have mulltiple rows or columns. The default is 1.
+    row : int, optional
+        Specifies the row # to put the surface trace in.  Useful when passing figures that have mulltiple rows or columns. The default is 1.
+    fig : plotly figure object, optional
+        The figure to which the trace will be added.  If no figure is provided, then a 1x1 figure will be made and returned. The default is None.
+    scale: float, optional
+        A scale that we can multiply the x and y values by.  For instance, to convert indices into real space.     
+    
+    Returns
+    -------
+    fig : TYPE
+        DESCRIPTION.
+
+    '''
+    if fig == None: 
+        fig = make_subplots()
+    
+    x = np.linspace(0, len(xyz), len(xyz))*scale
+    y = np.linspace(0, len(xyz[0]), len(xyz[0]))*scale
+    
+    trace = go.Surface(x = x, y = y, z = xyz, showlegend=False, showscale=False)
+    fig.add_trace(trace, row = row, col = col)
+        
+    return fig
+
+
+def make_exemplar_profiles_plot(xyz, row = 1, col = 1, robust = 6, fig = None, scale = 1):
+    '''
+    Accepts a 2D array of z-values, calls a function to find five exemplar profiles, and then plots them.  Returns the figure. 
+    
+
+    Parameters
+    ----------
+    xyz : 2D array.
+        The idea here is to have the array be z-values (heights) from a profilometry instrument.
+    row : int, optional
+        The starting row for the 5 plots. The default is 1.
+    col : int, optional
+        The starting column for the 5 plots. The default is 1.
+    robust : float, optional
+        This determines how many times from the median (in terms of spread) or mean (in terms of standard deviation) we will reject outliers. The default is 6.
+    fig : plotly figure object, optional
+        The figure the traces will be added to.  Can be an existing figure. The default is None.
+    scale : float, optional
+        amount to scale x or y indices by. The default is 1.
+
+    Returns
+    -------
+    fig : plotly figure object
+        A figure with 5 plots, each on their own row.
+
+    '''
+    if fig == None:
+        fig = make_subplots(rows = 5, cols = 1)
+        
+    xyz = xyz - np.mean(xyz)
+    #% make the profile plot and label with Ra and Rm
+    stats_indices = profile_exemplar_roughnesses(xyz, robust = robust)
+    profile_x = np.linspace(0, len(xyz[0]), len(xyz[0]))*scale
+    
+    prof_lim = max([abs(min(xyz[stats_indices[0]])) , abs(max(xyz[stats_indices[0]]))]) # largest value, to use ot sacle y-axes
+    for i, index in enumerate(stats_indices):
+        profile_trace = go.Scatter(x = profile_x, y = xyz[index] - np.mean(xyz[index]), marker = dict(color  = "grey"), showlegend=False)
+        fig.add_trace(profile_trace, col = col, row = row + i)
+        fig.add_annotation(x = min(profile_x), y = prof_lim, text = f"Ra = {profile_roughness(xyz[index]):.4e}", col = col, row = row + i, xanchor = "left", yanchor = "top", showarrow=False)
+        fig.update_yaxes(range = [-1.02*prof_lim, 1.02*prof_lim], showticklabels = False, zeroline = True, col = col, row = row + i)
+        fig.update_xaxes(visible = False, col = col, row = row + i)
+    
+    fig.update_traces(marker= dict(color = "darkcyan"), col = col, row = row + 2)
+    fig.update_xaxes(title = "position / microns", visible=True, col = row, row = row + 4)
+    
+    return fig
+
+
+def make_areal_z_hist(zs, row = 1, col = 1, fig = None):
+    '''
+    Accepts a 2d array or 1d array of height values for a surface. Generates a histogram .  
+    This also calculates and reports the mean, standard deviation, skewness, and kurtosis. 
+
+    Parameters
+    ----------
+    zs : 2D or 1D array
+        The values are heights for all the points on a surface.
+    row : int, optional
+        row for the plot to be added to. The default is 1.
+    col : int, optional
+        col for the plot to added to. The default is 1.
+    fig : plotly figure object, optional
+        A figure with the areal histograms to be added to. The default is None.
+
+    Returns
+    -------
+    fig : plotly figure object
+        a figure with the histogram added. 
+
+    '''
+    if fig == None:
+        fig = make_subplots()
+    
+    mean_z = np.mean(zs) # should be zero now... 
+    std_z = np.std(zs)
+    skewness = np.mean((zs - mean_z)**3) / std_z**3
+    kurtosis = np.mean((zs - mean_z)**4) / std_z**4
+    
+    areal_all_hist = go.Histogram(x = zs, showlegend=False, marker = dict(color = "darkcyan", line = dict(width = 0))) 
+    #areal_all_hist = quickHistTrace(zs)
+    fig.add_trace(areal_all_hist, row = row, col = col,)
+    
+    fig.add_annotation(row = row, col = col, 
+                          x = mean_z, y = 0, # at this at the lowest point midway across the x
+                          text = f''''
+                          roughness = {np.mean(abs(zs - np.mean(zs))):.4e}<br>
+                          z mean = {mean_z:.4e}<br>
+                          z stdev = {std_z:.4e}<br>
+                          z skewness = {skewness:.4e} <br>
+                          z kurtosis = {kurtosis:.4e} <br>
+                          ''', 
+                          xanchor = "center", yanchor = "bottom", showarrow = False)
+    
+    fig.update_xaxes(title = "height /microns", range = [np.min(zs), np.max(zs)], zeroline=True, row = row, col = col)
+    fig.update_yaxes(showticklabels = False, row = row, col = col)
+    
+    return fig
+
+
+def peak_valley_NN_plot(summits, valleys, fig = None, scale = 1, row = 1, col = 1):
+    '''
+    Generates a plot of the peak and valley nearest neighbor distributions
+
+    Parameters
+    ----------
+    summits : list containing two arrays.  
+        Each array needs to be a series of x, y, z coordinates corresponding to the location of the summits. I am assumign here that the first is from experimental data and the second is from simulated data. 
+    valleys : list containing two arrays
+        Each array needs to be a series of x, y, z coordinates corresponding to the location of the valleys. I am assumign here that the first is from experimental data and the second is from simulated data. .
+    fig : plotly figure object, optional
+        The figure to which the traces will be added. The default is None.
+    scale : float, optional
+        If we need to scale the coordinates in the x, y, z, this can be used to do this. The default is 1.
+    row : int, optional
+        starting row for adding the traces. The default is 1.
+    col : int, optional
+        starting column for adding the traces.. The default is 1.
+
+    Returns
+    -------
+    fig : plotly figure object
+        A figure containing both the peak and valley plots.
+
+    '''
+    if fig == None:
+        fig = make_subplots(rows = 5, cols = 1)
+    
+    sim_summit_NN, NNI = areal_nearest_neighbor_distances(summits[1])
+    exp_summit_NN, NNI = areal_nearest_neighbor_distances(summits[0])
+    sim_valley_NN, NNI = areal_nearest_neighbor_distances(valleys[1])
+    exp_valley_NN, NNI = areal_nearest_neighbor_distances(valleys[1])
+
+    x_range = [0, max(max(sim_summit_NN), max(exp_summit_NN), max(sim_valley_NN), max(exp_valley_NN)) ]
+
+    sim_summit_hist = quickHistTrace(x = sim_summit_NN)
+    exp_summit_hist = quickHistTrace(x = exp_summit_NN)
+    sim_valley_hist = quickHistTrace(x = sim_valley_NN)
+    exp_valley_hist = quickHistTrace(x = exp_valley_NN)
+    
+    fig.add_trace(sim_summit_hist, row = row, col = col)
+    fig.add_trace(exp_summit_hist, row = row+1, col = col)
+    fig.add_trace(sim_valley_hist, row = row+3, col = col)
+    fig.add_trace(exp_valley_hist, row = row+4, col = col)
+    
+    fig.update_traces(marker = dict(color = "grey"), showlegend = False, col = col, row = row)
+    fig.update_traces(marker = dict(color = "darkblue"), showlegend = False, col = col, row = row+1)
+    fig.update_traces(marker = dict(color = "grey"), showlegend = False, col = col, row = row+3)
+    fig.update_traces(marker = dict(color = "darkred"), showlegend = False, col = col, row = row+4)
+  
+    fig.update_xaxes(range = x_range, row = row, col = col, showticklabels = False)
+    fig.update_xaxes(range = x_range, row = row+1, col = col, )
+    fig.update_xaxes(range = x_range, row = row+3, col = col, showticklabels = False)
+    fig.update_xaxes(range = x_range, title = "distance / microns", row = row+4, col = col, )
+    
+    fig.update_yaxes(row = row, col = col, showticklabels = False)
+    fig.update_yaxes(row = row+1, col = col, showticklabels = False)
+    fig.update_yaxes(row = row+3, col = col, showticklabels = False)
+    fig.update_yaxes(row = row+4, col = col, showticklabels = False)
+    return fig
+
+
+def peak_valley_corr_plot(summits, valleys, fig = None, scale = 1, row = 1, col = 1):
+    '''
+    A function for plotting correlation plots between features in areal data. 
+
+    Parameters
+    ----------
+    summits : list containing two arrays.  
+        Each array needs to be a series of x, y, z coordinates corresponding to the location of the summits. I am assumign here that the first is from experimental data and the second is from simulated data. 
+    valleys : list containing two arrays
+        Each array needs to be a series of x, y, z coordinates corresponding to the location of the valleys. I am assumign here that the first is from experimental data and the second is from simulated data. .
+    fig : plotly figure object, optional
+        The figure to which the traces will be added. The default is None.
+    scale : float, optional
+        If we need to scale the coordinates in the x, y, z, this can be used to do this. The default is 1.
+    row : int, optional
+        starting row for adding the traces. The default is 1.
+    col : int, optional
+        starting column for adding the traces.. The default is 1.
+
+    Returns
+    -------
+    fig : plotly figure object
+        A figure containing both the peak and valley plots.
+
+    '''
+    if fig == None:
+        raise("You need to provide a existing plot")
+    sim_summit_corr = areal_feature_correlation(summits[1], scale = scale)
+    exp_summit_corr = areal_feature_correlation(summits[0], scale = scale)
+    sim_valley_corr = areal_feature_correlation(valleys[1], scale = scale)
+    exp_valley_corr = areal_feature_correlation(valleys[0], scale = scale)
+
+
+    x_range = [0, max(max(sim_summit_corr[0]), max(exp_summit_corr[0]), max(sim_valley_corr[0]), max(exp_valley_corr[0])) ]
+    y_range = [0, max(max(sim_summit_corr[1]), max(exp_summit_corr[1]), max(sim_valley_corr[1]), max(exp_valley_corr[1])) ]
+    
+    sim_summit_corr_scatter = go.Scatter(x = sim_summit_corr[0], y = sim_summit_corr[1], marker = dict(color = "grey"), showlegend=False)
+    exp_summit_corr_scatter = go.Scatter(x = exp_summit_corr[0], y = exp_summit_corr[1], marker = dict(color = "darkblue"), showlegend=False)
+    sim_valley_corr_scatter = go.Scatter(x = sim_valley_corr[0], y = sim_valley_corr[1], marker = dict(color = "grey"), showlegend=False)
+    exp_valley_corr_scatter = go.Scatter(x = exp_valley_corr[0], y = exp_valley_corr[1], marker = dict(color = "darkred"), showlegend=False)
+
+    
+    fig.add_trace(sim_summit_corr_scatter, row = row, col = col)
+    fig.add_trace(exp_summit_corr_scatter, row = row, col = col)
+    fig.add_trace(sim_valley_corr_scatter, row = row+3, col = col)
+    fig.add_trace(exp_valley_corr_scatter, row = row+3, col = col)
+    
+  
+    fig.update_xaxes(range = x_range, row = row, col = col, showticklabels = False)
+    fig.update_xaxes(range = x_range, title = "distance / microns", row = row+3, col = col, )
+
+    fig.update_yaxes(row = row, col = col, showticklabels = False)
+    fig.update_yaxes(row = row+3, col = col, showticklabels = False)
+    
+    return fig
+
+
+def make_angular_profile_plot(xyz, fig = None, col = 1, row = 1, scale = 1, angular_profiles = None):
+    '''
+    Takes a 2D array of height information, calculates profiles at different angles, and plots the angular dependence of roughness as  line chart, with an area fill that extends from mean + 1 std to mean - 1 std
+
+    Parameters
+    ----------
+    xyz : 2d array
+        The areal data.
+    fig : plotly figure object, optional
+        The figure that the chart will be added to. The default is None.
+    col : int, optional
+        starting column for the plot. The default is 1.
+    row : int, optional
+        starting row for the plot. The default is 1.
+    scale : float optional
+        amount to scale x values by.  Can be used to convert between indices and real space. (note: not currently used, but could be used in the future if we want to get the profiles)
+    Returns
+    -------
+    fig : plotly figure object
+        a figure with the angular plot.
+
+    '''
+    if fig == None:
+        fig = make_subplots()
+    
+    if angular_profiles == None:
+        angular_profiles = get_angular_profiles(xyz)
+
+    #%
+    angles = []
+    profiles = []
+    angular_rough = []
+    angular_rough_std = []
+    
+    for key in angular_profiles:
+        angles.append(key)
+        profiles.append(angular_profiles[key])
+        roughs = []
+        for profile in angular_profiles[key]:
+            #print(len(profile))
+            roughs.append(profile_roughness((profile)))
+        angular_rough.append(np.mean(roughs))
+        angular_rough_std.append(np.std(roughs))
+    
+    # because of how filling workin plotly, we need to create a single trace that 
+    # encompases the data +/- std. 
+    angular_bounds = angular_rough + angular_rough[::-1] # concatinate ys withthemselves, reversed
+    angular_bounds_std = angular_rough_std + list(-1*np.array(angular_rough_std[::-1])) # do the same for the std values
+    
+    angular_bounds = np.array(angular_bounds) + np.array(angular_bounds_std) #now add the lists
+    bounding_xs = angles + angles[::-1] # also get the x-values concatinated, with the later reversed, this creates a loop we can fill inside of
+    
+    angular_rough = np.array(angular_rough)
+    angular_rough_std = np.array(angular_rough_std)
+        
+    ylim = max([abs(min(angular_rough)), max(angular_rough)])
+    
+    bounding_trace = go.Scatter(x = bounding_xs, y = angular_bounds, line = dict(color = "darkcyan", width = 0), fill = "toself", showlegend=False)
+    angular_trace = go.Scatter(x = angles, y = angular_rough, marker = dict(color = "darkcyan"), showlegend=False)
+    
+    #now min and max...
+    lower_bound = go.Scatter(x = [0, max(angles)], y = [min(angular_rough + angular_rough_std)]*2, mode = "lines", marker = dict(color = "darkblue", ), line = dict(dash = "dot"),  showlegend=False)
+    upper_bound = go.Scatter(x = [0, max(angles)], y = [max(angular_rough - angular_rough_std)]*2, mode = "lines", marker = dict(color = "darkred", ), line = dict(dash = "dot"), showlegend=False)
+    
+    fig.add_trace(bounding_trace, row = row, col = col)
+    fig.add_trace(angular_trace, row = row, col = col)
+    fig.add_trace(lower_bound, row = row, col = col)
+    fig.add_trace(upper_bound, row = row, col = col)
+    fig.update_yaxes(title = "roughness", range = [min(np.array(angular_rough - np.array(angular_rough_std)*1.1)), max(np.array(angular_rough) + np.array(angular_rough_std)*1.1)], row = row, col = col)
+    fig.update_xaxes(title = "angle", col = col, row = row)
+    
+    return fig
+
+
+#######
+#   PROCESSING DATA INTO ARRAYS
+#######
+
+def xyz_average_out_nanvalues(xyz):
+    '''
+    Used to take a 2D array with NAN values and remove them.  This does it by averaging using the values of the 9 point square. 
+    May not be the best, but it works. 
+
+    Parameters
+    ----------
+    xyz : 2D array
+        z heights for a surface.
+
+    Returns
+    -------
+    removed : 2D array
+        the same array as provided, but with the NAN values removed and being replaced by floats. .
+
+    '''
+    print(f"there are {np.sum(np.isnan(xyz))} nan values to remove")
+    print(f"this is {np.sum(np.isnan(xyz)) / (xyz.shape[0] * xyz.shape[1]) * 100:.1f}% of the array.")
+    # Create a copy of the input array to modify and return
+    removed = xyz.copy()
+    # Get the number of rows and columns of the array
+    rows, cols = xyz.shape
+    
+    # Iterate over each element in the array
+    for i in range(rows):
+        for j in range(cols):
+            # Check if the current element is NaN
+            if np.isnan(xyz[i, j]):
+                # Initialize variables for sum and count of neighboring elements
+                count = 0
+                value_sum = 0
+                
+                # Iterate over the 3x3 grid centered around the current element
+                for k in [-1, 0, 1]:
+                    for l in [-1, 0, 1]:
+                        # Calculate the indices of the neighboring element
+                        ni, nj = i + k, j + l
+
+                        # Check if the neighboring indices are within the array bounds
+                        if 0 <= ni < rows and 0 <= nj < cols:
+                            neighbor = xyz[ni, nj]
+                            # Check if the neighboring element is not NaN
+                            if not np.isnan(neighbor):
+                                # Add the neighbor's value to the sum and increment the count
+                                value_sum += neighbor
+                                count += 1
+                
+                # Only update the element if there are non-NaN neighbors
+                if count > 0:
+                    # Replace the NaN with the average of the neighboring elements
+                    removed[i, j] = value_sum / count
+
+    # Return the modified array
+    return removed
+
+def verts_to_xyz (verts, x_scale = 1, y_scale = 1):
+    '''
+    This takes an list of lists, each list being a vertex (x,y,z), and converts this to a 2D array. 
+    Vertices are used for blender, and arrays are used for the numerical analysis.
+
+    Parameters
+    ----------
+    verts : list of lists
+        Each sublist has three entries, for x, y, and z coordinates.
+    x_scale : float, optional
+        This is the distance between each adjacent pair on the x-axis.  Used to convert from real-space to indices. The default is 1.
+    y_scale : float, optional
+        This is the distance between each adjacent pair on the x-axis.  Used to convert from real-space to indices. The default is 1.. The default is 1.
+
+    Returns
+    -------
+    xyz : 2D array
+        a 2D array that contains z-values. .
+
+    '''
+    
+    if x_scale ==1 or y_scale == 1:
+        print("You have opted to use a scale of 1.  Note this may give strange results, unless your x and y coordinates are already indices, and not positions in real space. ")
+    xs = []
+    ys = []
+    zs = []
+    for v in verts:
+        xs.append(v[0])
+        ys.append(v[1])
+        zs.append(v[2])
+    xs = np.array(xs)
+    ys = np.array(ys)
+    zs = np.array(zs)
+    #
+    x_indices = np.round(xs/x_scale).astype(int) # convert to the nearest integer
+    y_indices = np.round(ys/y_scale).astype(int) # round is fine, since we will not be off by 0.5
+    #
+    # then use the indices to build the xyz...
+    xyz = np.zeros((np.amax(x_indices)+1, np.amax(y_indices)+1)) # the +1 because we need the size, and indicies start at 0
+    for x, y, z in zip(x_indices, y_indices, zs):
+        xyz[x][y] = z
+    #
+    return xyz
+
+
+def process_zygos_xyz(xyzfile):
+    '''
+    
+
+    Parameters
+    ----------
+    xyzfile : string
+        This is the location of a .xyz file output from a Zygos instrument. The expected formatting can be found on page xxx of the Zygos manual.
+
+    Returns
+    -------
+    verts : list of lists
+        each sublist is a list of three values, the x y an dz coordinates
+        
+    faces : list of lists
+        each sublist is a list of four numbers.  These are the indices that define the four corners of a face. 
+    
+    xyz_array : 2D array
+        these are the z-coordinates, set in a 2D array
+    
+    xy_scale : float
+        the distance between points on the x and y axes---right now, they is assumed to be the same, which is why only value is returned.
+    
+
+    '''
+    
+    
+    #
+    # Load your data (replace 'path_to_file' with your file path)
+    #data = np.loadtxt(folder/data_file, delimiter=',')
+    xs = []
+    ys = []
+    zs = []
+    record = False
+    #
+    with open(xyzfile) as xyz:
+        for i, line in enumerate(xyz):
+            if i == 3: 
+                n_x = int(line.split(" ")[2])
+                n_y = int(line.split(" ")[2])
+                #xyz_array = np.zeros((n_x, n_y))
+            #
+            if i  == 7: # line with the scale info...
+                xy_scale = float(line.split(" ")[6]) * 10**6 # this is the number of microns per pixel
+            if "#" in line  and record == False:
+                record = True
+            if "#" in line and record == True:
+                recorded = False
+            if record == True and "#" not in line:
+                sl = line.split(" ")
+                
+                xs.append(int(sl[1])*xy_scale)  # from zygos manual, the second number in the row is the x index, convert to microns
+                ys.append(int(sl[0])*xy_scale)  # The y-index, convert to microns
+                try:
+                    zs.append(float(sl[2]))  # this is in units of microns, also from the zygos manual
+                    #xyz_array[int(sl[1]), int(sl[0])] = float(sl[2])
+                    #print(sl)
+                except: 
+                    zs.append(np.nan)# this would mean we didn't find a number
+                    #xyz_array[int(sl[1]), int(sl[0])] = np.nan
+                    #print(sl)
+                
+    #
+    # bring down z, so the mean is at 0
+    zs = np.array(zs)
+    mean_z = np.nanmean(zs)
+    zs_corr = zs - mean_z
+    #
+    verts = []
+    for x, y, z in zip(xs, ys, zs_corr):
+        verts.append((x, y, z))
+    #
+    #   
+    # faces are going to be squares
+    faces = []
+    for x in range(1, n_x): # this is because we start counting vertices at 1
+        for y in range(1, n_y-1): # start at 1 and go second to the end
+            faces.append(
+                ((x-1)*n_y + y, # Top left
+                 (x-1)*n_y + y + 1, # top right. 
+                 x*n_y + y + 1, # bottom right
+                 x*n_y + y)   # bottom left
+                )
+    #
+    #now we need to convert our verts to an xyz_array, in case we want to process it...
+    xyz_array = verts_to_xyz(verts, x_scale = xy_scale, y_scale = xy_scale)
+    return verts, faces, xyz_array, xy_scale
+
+
+####
+#   FUNCTIONS THAT SUPPORT GETTING INTO BLENDER
+####
+def xyz_to_verts_faces (xyz, x_scale = 1, y_scale = 1):
+    '''
+    
+
+    Parameters
+    ----------
+    xyz : 2D array
+        the z-values of the surface.
+    x_scale : float, optional
+        Used to convert from array indices into real space coordinates/distances. The default is 1.
+    y_scale : float, optional
+        Used to convert from array indices into real space coordinates/distances. The default is 1.
+
+    Returns
+    -------
+    verts : list of lists
+        each sublist is the x, y, and z coordinates.
+    faces : list of list
+        each sublist is a list of 4 values, which are the indices of the corners of a face. .
+
+    '''
+    verts = []
+    for i, x in enumerate(xyz): #the row is the x-index
+        for j, y in enumerate(x): # walk through the y-indices. 
+            verts.append(
+                (
+                    (i + 0) * x_scale, 
+                    (j + 0) * y_scale, 
+                    xyz[i][j])
+                )
+    n_x = len(xyz)
+    n_y = len(xyz[0])
+    faces = []
+    for x in range(1, n_x): # this is because we start counting vertices at 1
+        for y in range(1, n_y-1): # start at 1 and go second to the end
+            faces.append(
+                ((x-1)*n_y + y, # Top left
+                 (x-1)*n_y + y + 1, # top right. 
+                 x*n_y + y + 1, # bottom right
+                 x*n_y + y)   # bottom left
+                )
+    #     
+    return verts, faces
+
+
+###
+#   PROCESSING THE 2D SURFACE
+###
+
+from scipy.interpolate import RectBivariateSpline
+def raw_form_wave_rough (xyz_array, s_large = 1, s_wave = 1, s_rough = 0, plot = False):
+    '''
+    takes an 2D array of z values and returns three new arrays of the same shape:
+        one that is the form, one that is the waviness, and one that is the roughness.
+        This is done by doing interpolations. 
+    Parameters
+    ----------
+    xyz_array : TYPE
+        DESCRIPTION.
+    s_large : TYPE, optional
+        This is the parameter that controls how long-scale the trend is.  IF we want to separate out trends that spant the entire range, then 9 works. The default is 7.
+    s_wave : TYPE, optional
+        This is the parameter that controls how long-scale the trend is. If we want to have waviness. The default is 6.
+
+    Returns
+    -------
+    [form_spline_result, wave_spline_result, rough_spline_result] : list of arrays
+        each array is the spline result for the form, waviness, or roughness part of the surface
+    
+    [xyz_array, z_minus_form_spline, z_minus_form_minus_wave]: list of arrays
+        each array is actual data: raw, raw minus the form spline, and the raw minus form and waviness splines
+    '''
+    n_points = len(xyz_array) * len(xyz_array[0])
+    std = np.std(xyz_array)
+    form_guess = n_points * std**2 / 5 # based off chat GPT's suggestion, scaled down by a factor of 5
+    form_guess = min([len(xyz_array), len(xyz_array[0])]) # set this equal to the minimum dimension
+    
+    wave_guess = form_guess / 400 # so 40x more resolution??  Maybe like 20-40 wavelengths in the sample? so things ~ 25 microns?
+    wave_guess = 1
+    
+    # This will find the large-scale trend, default to an s-value of n_points * std**2
+    form_spline = RectBivariateSpline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))), xyz_array, s = form_guess * s_large)
+    # Then we calculate the result from this spline
+    form_spline_result = form_spline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))))
+    #Then we find the difference between raw and curviness pline
+    z_minus_form_spline = xyz_array - form_spline_result
+    #
+    # Now we find the waviness, default to an s-value of n_points * std
+    wave_spline = RectBivariateSpline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))), z_minus_form_spline, s = wave_guess * s_wave)
+    wave_spline_result = wave_spline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))))
+    # This difference is the roughness left behind after correcting for waviness
+    z_minus_form_minus_wave = z_minus_form_spline - wave_spline_result
+    #
+    # now let us fit a spline to the roughness, default behavior is to use s = 0 (no smoothing)
+    rough_spline = RectBivariateSpline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))), z_minus_form_minus_wave, s = n_points * std**0.5 *s_rough)
+    rough_spline_result = rough_spline(np.array(range(0, len(xyz_array))), np.array(range(0, len(xyz_array[0]))))
+    #
+    # I added this plotting, since I needed it for a presentation... maybe shoudl just return all 5 arrays
+    if plot == True:
+        import plotly.graph_objects as go
+        for surface in [
+                xyz_array,
+                form_spline_result, 
+                z_minus_form_spline,
+                wave_spline_result,
+                z_minus_form_minus_wave,
+                ]:
+            fig = go.Figure(data=[go.Surface(z=surface)])
+
+            fig.update_layout(autosize=False,
+                          width=500, height=500,
+                          margin=dict(l=65, r=50, b=65, t=90))
+
+            fig.show("png")
+    #Then reutrn values. 
+    return [form_spline_result, wave_spline_result, rough_spline_result], [xyz_array, z_minus_form_spline, z_minus_form_minus_wave]
+
+
+####
+#   PROCESING INDIVIDUAL PROFILES
+####
+
+def profile_roughness (xz, fit = True, scale = 1):
+    '''
+    
+
+    Parameters
+    ----------
+    xz : array
+        this is an array that has z values along a profile.
+    fit : boolean, optional
+        ths determines the type of roughness to be calculated.  WHen true, a line is fit to the array and then the roughness is determined from the residuals. When false, the mean of the array is used to find the roughness. The default is True.
+    scale : float, optional
+        Provides the scaling to convert between indices and real space positions.  Not generally needed for this calcualtion, so using a scale of 1 should always be fine. The default is 1.
+
+    Returns
+    -------
+    float
+        the calculated roughness value of the profile.
+
+    '''
+    from scipy.stats import linregress
+    y = np.array(xz) # lets make sure that we have the data as numpy array
+    x = np.linspace(0, len(xz), len(xz)) * scale
+    #should fit to a line, and then return the residual for the roughness...
+    # this is the way that profiles are handled
+    if fit != True:
+        # fit a model and get the residual
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        # Use the slope and intercept to calculate fitted values
+        fitted_values = slope * x + intercept
+
+        # Calculate residuals
+        residuals = y - fitted_values
+        #roughness is the mean of the absolute residuals. 
+        return np.mean(abs(residuals))#the roughness of the profile
+    
+    # fit a line
+    # get residuals
+    return np.mean(abs(xz - np.mean(xz)))# np.mean(residuals - np.mean(residuals))
+
+
+def reject_outliers_median (arr, robust = 6):
+    '''
+    Accepts an array, and then rejects outliers based on a threshold based 
+    on MAD and the meadian.
+    This is applicable to both skewed and distributions with large outliers
+
+    Parameters
+    ----------
+    arr : array
+        this is an array of floats to examine for outlier values.
+    mult : float, optional
+        This provides how many times the MAD we wish to use as the range outside of which we will consider outliers. The default is 6.
+
+    Returns
+    -------
+    array :
+        the original array with outliers removed.
+
+    '''
+    median = np.median(arr)
+    MAD = np.median(np.abs(arr - median))
+    
+    # Define a threshold based on MAD, you might choose a different multiplier
+    threshold = robust * MAD
+    
+    # Create a mask that selects values within the threshold
+    filtered_mask = (arr > (median - threshold)) & (arr < (median + threshold))
+    
+    # Apply the mask to get a filtered array
+    return arr[filtered_mask]
+
+
+def profile_exemplar_roughnesses (xyz, robust = None):
+    '''
+    Takes a 2D array of profiles, caculates the roughness for each profile (sub-array) within it.
+    Then, it can go through this list and reject outlier values (if robust is given the value of a float).
+    Finally, the remaining list is analyzed and the indices of profiles corresponding to the maximum roughness, the 75 roughness, the median roughness, the 25 percent roughness, and the minimum roughness is returned. 
+    This list can be used to find and display the corresponding profiles. 
+
+    Parameters
+    ----------
+    xyz : 2D array
+        A 2D array of heights (z values).
+    robust : float, optional
+        The amount by which we wish to scale the MAD or standard deviation in order to define the range outside of which lie our outliers. The default is None. Looks to remove outliers once, at a 6-sigma value, before finding mean.
+        If robust = None, then no outlier rejection is done.
+        
+    Returns
+    -------
+    median_index : list
+        a list of 5 numbers corresponding to the idex of the profile with maximum roughess, 75% roughness, median roughness, 25% roughness, and minimum roughness. .
+
+    '''
+    
+    row_rough = []
+    #go through row by row
+    for row in xyz: # go profile by profile
+        row_rough.append(profile_roughness(row))#append the roughness of the row
+    
+    row_rough = np.array(row_rough)
+    # if asked for, we reject outliers
+    if robust != None: # now we want to remove all values that are outside of the range of MAD...
+        rows_for_analysis = reject_outliers_median(row_rough, robust)
+    elif robust == None: # then we are just going to use the original data
+        rows_for_analysis = row_rough
+        
+    # get values of the high, quartiles, low, and median row roughness for what we are analyzing...
+    upper_rough = np.nanmax(rows_for_analysis)
+    uq_rough = np.nanpercentile(rows_for_analysis, 75)
+    median_rough = np.nanmedian(rows_for_analysis)
+    lq_rough = np.nanpercentile(rows_for_analysis, 25)
+    lower_rough = np.nanmin(rows_for_analysis)   
+    
+    #now, find the rows with the above roughnesses.
+    # this approach is a bit more robust, as it will find the best case when median is between two values.
+    # we need to operate on the original rows, so we get the correct rows for the full 2D array
+    indices = []
+    for value in [upper_rough, uq_rough, median_rough, lq_rough, lower_rough]:
+        deviation = np.absolute(row_rough - value)
+        indices.append(deviation.argmin())
+            
+    return indices
+
+    
+def profile_peaks_valleys_zeros(xz, scale = 1):
+    '''
+    Takes an array of x values and returns three lists that contain the position of  peaks, valleys, and zero crossings in that profile. 
+
+    Parameters
+    ----------
+    xz : array
+        z values along a profile. .
+    scale : float, optional
+        number to convert between indices and real space coordinates. The default is 1.
+
+    Returns
+    -------
+    list
+        the position in space of the peaks along the profile.
+    list
+        the position in space of the vallyes along the profile.
+    list
+        the positino in space of the zero crossings along the profile. .
+
+    '''
+    peak_values = []
+    peak_indices = []
+    
+    valley_values = []
+    valley_indices = []
+    
+    zero_indices = []
+    for i, p in enumerate(xz[1:-2]): # no need to consider the first and last points...
+        # find peaks
+        if p > xz[i + 1 - 1] and p > xz [i + 1 + 1]:
+            peak_values.append(p)
+            peak_indices.append(i+1)
+        #find valleys...
+        if p < xz[i + 1 - 1] and p < xz [i + 1 + 1]:
+            valley_values.append(p)
+            valley_indices.append(i+1)
+        # find zero crossings...
+        if p * xz[i + 1 - 1] < 0: # then one must be positive and one negative
+            zero_indices.append(i+1)
+    
+    # need to check the very last point for a zero crossing...
+    if xz[-1] * xz[-2] < 0: 
+        zero_indices.append(len(xz))# add the last point
+        
+    return [np.array(peak_indices) * scale, np.array(peak_values)], [np.array(valley_indices) * scale, np.array(valley_values)], [np.array(zero_indices) * scale - 0.5*scale] # last one adjusts to find midpoint...
+
+
+def profile_nearest_neighbors (x, scale = 1):
+    '''
+    Takes a list of feature locations (i.e,, peaks, valleys, etc) and returns a list of nearest neightbor distances for all features. 
+
+    Parameters
+    ----------
+    x : list
+        the positions of the features.
+    scale : float, optional
+        used to convert between indices and real space coordinates.  Use if your feature position list was in terms of indices and not real-space coordinates. The default is 1.
+
+    Returns
+    -------
+    distances : list
+        List of nearest neighbor distances for each feature. .
+
+    '''
+    distances = []
+    for i, l in enumerate(x[1:-1]):
+        distances.append(min([abs(l - x[i]), #distance to the prior point
+                             abs(l - x[i+2]) # distance to the next point
+                             ])*scale)
+    return distances
+
+
+def profile_pairwise_distances (x, scale = 1):
+    '''
+    returns all the pairwise distances between the points in the x-array
+
+    Parameters
+    ----------
+    x : list
+        Location of feature positions (i.e., peaks, vallys, etc).
+    scale : float, optional
+        used to convert between indices and real-space locations. Use if the supplied list was in terms of indices, rather than real-space coordinates. . The default is 1.
+
+    Returns
+    -------
+    distances : list
+        distances between all the possible pairs of features.
+
+    '''
+    distances = []
+    for i, l1 in enumerate(x[:-1]): # don't need to check the last one.
+        for j, l2 in enumerate(x[i+1:]):
+            distances.append(abs(l1 - l2)*scale)
+    return distances
+
+
+def profile_autocorrelation_curve(xz, scale = 1):
+    '''
+    Takes an array of z values in space and calculates the autocorrelation function for the profile. 
+
+    Parameters
+    ----------
+    xz : array
+        z values of a profile.
+    scale : float, optional
+        if needed, convets between idices and real-space coordintes. The default is 1.
+
+    Returns
+    -------
+    autocorr : array
+        the autocorrelation of the function.  These are the y-values.
+
+    '''
+    # Calculate autocorrelations using numpy's correlate function
+    autocorr = np.correlate(xz, xz, mode='full')
+    
+    # The result is symmetric, so we take the second half
+    autocorr = autocorr[autocorr.size // 2:]
+    
+    # Normalize by the number of observations minus the lag
+    n = len(xz)
+    lags = np.arange(n)
+    autocorr /= (n - lags)
+    
+    return autocorr
+
+
+def profile_material_curve(xz, scale = 1):
+    '''
+    Basically, we will go from just above the highest point to just below the lowest
+    we will integrate the amount of area present. 
+    then we will go back and adjust for the largest area present
+    then we return two arrays: % and height
+
+    Parameters
+    ----------
+    xz : array
+        z positions for a profile.
+
+    Returns
+    -------
+    material_curve : list of lists
+        first list is the percentage of the material above a threshold, for a series of thresholds. 
+        Second list is the set of thresholds..
+
+    '''
+    from scipy.integrate import simps
+    
+    raw_min = np.min(xz)
+    raw_max = np.max(xz)
+    
+    xz_shifted = np.array(xz - raw_min) # this will make all values positive
+    
+    #make the heights we want o step through:
+    thresholds = np.linspace(np.max(xz_shifted)*1.01, 0, 1000)
+    
+    #also make x-values
+    x_values = np.linspace(0, len(xz)*scale, len(xz))
+    
+    areas = []
+    for t in thresholds:
+        # Identify regions above the threshold
+        above_threshold = xz_shifted > t
+    
+        # Find indices where regions start and end
+        edges = np.diff(np.concatenate(([0], above_threshold.astype(int), [0])))
+        region_starts = np.where(edges == 1)[0]
+        region_ends = np.where(edges == -1)[0]
+    
+        # Sum the areas of individual regions
+        area_sum = 0
+        for start, end in zip(region_starts, region_ends):
+            area_sum += simps(xz_shifted[start:end], x_values[start:end])
+    
+        areas.append(area_sum)
+    
+    material_curve = np.array(areas)/max(areas)
+    return [material_curve, thresholds + raw_min]
+
+
+########
+#   AREAL ANALYSIS
+########
+
+def areal_summits_valleys(xyz, scale = 1, kind = "nine"):
+    '''
+    Use this function to find the heights of peaks and valleys as well as their coordinates.
+
+    Parameters
+    ----------
+    xyz : 2D array or list
+        This is the height profile as an array of arrays.
+    scale : float, optional
+        A scale applied to the indices of peaks and valleys when returning the coordinates. It turns the indices of the points into real space locations. The default is 1, and this will result in only the indices being returned.
+    kind : string, optional
+        Determines if the peak finding uses 5 point or 9 point.  Options are "five" and "nine". The default is "nine".
+
+    Returns
+    -------
+    numpy array
+        The z-values of the found peaks.
+    numpy array of numpy arrays [[],[],[]...]
+        An array containing arrays of x, y positions for the peaks.  If scale = 1, then these are indices.
+    numpy array
+        The z-values of the found valleys.
+    numpy array of numpy arrays [[],[],[]...]
+        An array containing arrays of x, y positions for the valleys.  If scale = 1, then these are indices.
+
+    '''
+    summits = []
+    s_indices = []
+    valleys = []
+    v_indices = []
+    for i, row in enumerate(xyz[1:-1]): # don't look at the first and last row
+        for j, z in enumerate(row[1:-1]): # don't look at the last 
+            # check to see if the current entry is the highest or lowest
+            if all(xyz[i+1][j+1] > x for x in [
+                                                xyz[i+1 - 1][j+1], 
+                                                xyz[i+1 + 1][j+1], 
+                                                xyz[i+1][j+1 - 1], 
+                                                xyz[i+1][j+1 + 1]
+                                                ]): # this woudl be a 5 point summit
+                if kind == "nine":
+                    if all(xyz[i+1][j+1] > x for x in [ 
+                                                        xyz[i+1 - 1][j+1 - 1], #top left
+                                                        xyz[i+1 + 1][j+1 - 1],  # top right
+                                                        xyz[i+1 - 1][j+1 + 1], # bottom left
+                                                        xyz[i+1 + 1][j+1 + 1]  # bottom right
+                                                        ]): # combined with above, this woudl be a 9-point summit
+
+                        summits.append(xyz[i+1][j+1])
+                        s_indices.append(np.array([i+1, j+1]))
+                else: # we have enough information for assigning a five point peak
+                    summits.append(xyz[i+1][j+1])
+                    s_indices.append(np.array([i+1, j+1]))
+            
+            # now valleys
+            if all(xyz[i+1][j+1] < x for x in [
+                                                xyz[i+1 - 1][j+1], 
+                                                xyz[i+1 + 1][j+1], 
+                                                xyz[i+1][j+1 - 1],
+                                                xyz[i+1][j+1 + 1]
+                                                ]): # this woudl be a valley
+                if kind == "nine":
+                    if all(xyz[i+1][j+1] < x for x in [ 
+                                                        xyz[i+1 - 1][j+1 - 1], #top left
+                                                        xyz[i+1 + 1][j+1 - 1],  # top right
+                                                        xyz[i+1 - 1][j+1 + 1], # bottom left
+                                                        xyz[i+1 + 1][j+1 + 1]  # bottom right
+                                                        ]): # combined with above, this woudl be a 9-point valley
+                        valleys.append(xyz[i+1][j+1])
+                        v_indices.append(np.array([i+1, j+1]))
+                else: # we have enough to assign the 5 point valley
+                    valleys.append(xyz[i+1][j+1])
+                    v_indices.append(np.array([i+1, j+1]))
+            
+    return np.array(summits), np.array(s_indices)*scale, np.array(valleys), np.array(v_indices)*scale
+
+# need to look into this. 
+def areal_feature_correlation(xy, bin_size=1, scale=1):
+    '''
+    returns x and y values that are the distance and probability
+
+    Parameters
+    ----------
+    xy : array 
+        z values fora profile..
+    bin_size : int, optional
+        determines the range over which we are going to bin the correlation data. The default is 1.
+    scale : float, optional
+        used to convert between indices and real-space coordinates, if needed. The default is 1.
+
+    Returns
+    -------
+    list of lists
+        first list is the edges of our bin, and the second is the counts in the bin.
+
+    '''
+    coords = np.array(xy)  # Array of coordinates
+
+    # Determine the bounds of the central region
+    W = np.ptp(coords, axis=0)  # Width of the original area in both x and y
+    central_region_width = W / 2
+    central_region_min = np.min(coords, axis=0) + W / 4
+    central_region_max = np.min(coords, axis=0) + 3 * W / 4
+
+    # Filter coords to include only those within the central region
+    central_coords = coords[(coords[:, 0] > central_region_min[0]) & (coords[:, 0] < central_region_max[0]) &
+                            (coords[:, 1] > central_region_min[1]) & (coords[:, 1] < central_region_max[1])]
+
+    # Compute pairwise distances in 2D for central region
+    distances = np.sqrt(np.sum((central_coords[:, np.newaxis, :] - central_coords[np.newaxis, :, :]) ** 2, axis=-1))
+    np.fill_diagonal(distances, np.nan)  # Ignore zero distances from a point to itself
+
+    # Define bins for distances
+    max_distance = np.nanmax(distances) / 2  # Maximum distance is half the width of the central region
+    bins = np.arange(0, max_distance + bin_size, bin_size)
+
+    # Histogram of distances
+    hist, bin_edges = np.histogram(distances, bins=bins)
+
+    # Normalize the histogram
+    n = len(central_coords)
+    total_pairs = n * (n - 1) / 2
+    bin_areas = np.pi * (bin_edges[1:]**2 - bin_edges[:-1]**2)
+    norm_hist = hist / (total_pairs * bin_areas)
+    
+    return [bin_edges[:-1], norm_hist]
+
+
+def areal_nearest_neighbor_distances(coords, scale=1):
+    '''
+    Takes a set of coordinates of features and calculates the nearest neightbor distances between them. 
+
+    Parameters
+    ----------
+    coords : list
+        coordinates of features.
+    scale : float, optional
+        used to convert between indices and real-space positions, if needed. The default is 1.
+
+    Returns
+    -------
+    np.transpose(distances)[1] : array
+        array of nearest neightbor distances for each feature
+    NNI : float
+        the nearest neighbor index. <-- not really used in our analysis. 
+
+    '''
+    from scipy.spatial import KDTree
+    # Convert coords to a NumPy array if it's not already
+    coords = np.array(coords)
+
+    # Determine the bounds of the central region
+    W = scale * np.ptp(coords, axis=0)  # Width of the original area in both x and y
+    central_region_width = W / 2
+    central_region_min = np.min(coords, axis=0) + W / 4
+    central_region_max = np.min(coords, axis=0) + 3 * W / 4
+
+    # Filter coords to include only those within the central region
+    central_coords = coords[(coords[:, 0] > central_region_min[0]) & (coords[:, 0] < central_region_max[0]) &
+                            (coords[:, 1] > central_region_min[1]) & (coords[:, 1] < central_region_max[1])]
+
+    # Calculate nearest neighbor distances for points in the central region
+    if len(central_coords) > 1:
+        tree = KDTree(central_coords)
+        distances, _ = tree.query(central_coords, k=2)  # Query the second nearest since the nearest is the point itself
+        observed_mean_distance = np.mean(distances[:, 1])
+
+        # Adjust the area for central region
+        area = np.prod(central_region_width)
+        n = len(central_coords)
+        expected_mean_distance = 0.5 / np.sqrt(n / area)
+
+        NNI = observed_mean_distance / expected_mean_distance
+        return np.transpose(distances)[1], NNI
+    else:
+        return None  # Return None if there are too few points for analysis
+    
+    
+def areal_fractal_dimension(xyz):
+    '''
+    takes a 2D array of z values and returns the fractal dimension of the surface. 
+    
+    NOTE: there is a block that can be uncommented, if you want to see how the dimension is obtained from the log plot. 
+
+    Parameters
+    ----------
+    xyz : 2D array
+        z values for the surface. .
+
+    Returns
+    -------
+    fractal_dimension : float
+        The calculated fractal dimension. .
+
+    '''
+    # Assuming xyz is your array of arrays
+    # ...
+    
+    # Here you need to process your xyz data to create a 2D array (Z) 
+    # where each element represents the height at that point.
+    
+    # Range of box sizes to use (must be divisors of the dimensions of Z)
+    box_sizes = np.arange(1, int(len(xyz)/4), 1)  # example range, adjust as needed
+    
+    # Count the boxes for each box size
+    counts = [box_counting_dimension(xyz, size) for size in box_sizes]
+    
+    # Calculate the slopes (fractal dimension) using a linear fit in the log-log scale
+    coeffs = np.polyfit(np.log(1/box_sizes), np.log(counts), 1)
+    fractal_dimension = coeffs[0]
+    
+     #Could be of use when trouble shooting. 
+    '''
+    print("Fractal dimension:", fractal_dimension)
+    # Optionally, plot the result
+    import matplotlib.pyplot as plt
+    plt.loglog(1/box_sizes, counts, 'o-', label='Box Counting Dimension')
+    plt.xlabel('Inverse Box Size')
+    plt.ylabel('Number of Boxes')
+    plt.legend()
+    plt.show()
+    '''
+    
+    return fractal_dimension
+
+
+def create_parallel_line_points(center, angle, length, num_points, num_lines=20, line_spacing=0.33):
+    """Generate points along parallel lines at a given angle from the center.
+    Used by the function: get_angular_profiles"""
+    theta = np.radians(angle)
+    dx, dy = np.cos(theta), np.sin(theta)
+    step = length / num_points
+
+    lines = []
+    for i in range(num_lines):
+        offset = (i - num_lines // 2) * line_spacing
+        line_center = (center[0] + offset * np.sin(theta), center[1] - offset * np.cos(theta))
+        line = [(line_center[0] + dx * step * j, line_center[1] + dy * step * j) for j in range(num_points)]
+        lines.append(line)
+    
+    return lines
+
+
+def get_angular_profiles(z_values, center=[], min_angle = 0, max_angle=180, step=1, num_lines = 20):
+    '''
+    Take a surface of z_values in a 2D array and calculates a series of profiles at a series of angles. Returns a dictionary that contains a series of profiles for each angle.
+
+    Parameters
+    ----------
+    z_values : 2D array
+        z-heights of the surface.
+    center : float, optional
+        the point about which the surface is rotated. The default is [].
+    max_angle : float, optional
+        The ending angle for rotation, exclusive.  Rotation will start at 0.  So a value of 180 samples all possiblel profiles. The default is 180.
+    step : float, optional
+        the spacing between angles. The default is 1.
+    num_lines : int
+        number of paralell profiles to determine at each angle
+
+    Returns
+    -------
+    dict
+        each dictionary key is the angle of rotation and the value is the series of profiles.
+
+    '''
+    height, width = z_values.shape
+    if not center:
+        center = [width / 2, height / 2]
+
+    num_points = max(height, width)
+    x = np.linspace(0, width - 1, width)
+    y = np.linspace(0, height - 1, height)
+
+    # Fit RectBivariateSpline to the entire dataset
+    #spline = RectBivariateSpline(y[:, 0], x[0, :], z_values)
+    spline = RectBivariateSpline(np.array(range(0, len(z_values))), np.array(range(0, len(z_values[0]))), z_values, s = 0) # S = 0 means interpolation
+
+    profiles = {}
+    angles = np.arange(min_angle, max_angle, step)
+    length = np.hypot(width, height)  # Max length to cover the array
+
+    for angle in angles:
+        #print(angle)
+        parallel_lines = create_parallel_line_points(center, angle, length, num_points, num_lines = num_lines)
+        all_profiles = []
+
+        for line in parallel_lines:
+            line_points = np.array(line)
+            # Use the spline function to interpolate z-values at these line points
+            profile_z = spline.ev(line_points[:, 1], line_points[:, 0])
+            all_profiles.append(profile_z)
+
+        # Store the profiles for this angle
+        profiles[angle] = all_profiles
+
+    return profiles  # Dictionary of profiles for each angle
+
+######
+#  GENERATRING FULL USEFUL FIGURES
+#####
+def test_smoothing_params(file = None, smoothing = None):
+    '''
+    A function that will produce the profiles that show form, wave, rough profiles, based on input smoothing parameters.
+    The idea is to try out parameters for smoothing that can then be used to generate the full report (which takes longer).
+
+    Parameters
+    ----------
+    file : path object, optional
+        The location of the file you want to plot. The default is None.
+    smoothing : dictionary, optional
+        contains parameters to control the splines. The default is None.
+
+    Returns
+    -------
+    testfig : plotly figure object
+        a figure object with our profiles, in case we want to do more with it.
+
+    '''
+    #put these in a dict, so we can refer to them later
+    # these control the relative amounts of smoothing for each component
+    # larger values mean more smooth
+    
+    #%
+    verts, faces, xyz_array, xy_scale = process_zygos_xyz(folder/file)
+    
+    # use a loop to remove NAN values, while the exist
+    if np.any(np.isnan(xyz_array)) == False: #there are no nan values to hand
+        print("no nan values to handle!")
+    while np.any(np.isnan(xyz_array)) == True:
+        xyz_array = xyz_average_out_nanvalues(xyz_array)
+        
+    #% Set up a plot, so we can determine the correct values of s to use....
+    splines, data = raw_form_wave_rough(xyz_array, s_large = smoothing["form"], s_wave = smoothing["wave"], s_rough = smoothing["rough"])
+    
+    z_waviness = splines[1] # just for conveience sake, we can give this a name...
+    z_roughness = splines[2] # just for conveience sake, we can give this a name...
+    
+    # Plotting the results
+    testfig = make_subplots(rows = 2, cols = 3,
+                            specs=[
+                                [{"type":"scene"}, {"type":"scene"}, {"type":"scene"},], 
+                                [{"type":"scene"}, {"type":"scene"}, {"type":"scene"},], 
+                                ])
+    for i, s in enumerate(data):
+        surf = go.Surface(z=s, showscale = False)
+        testfig.add_trace(surf, row = 1, col = i + 1)
+    for i, s in enumerate(splines):
+        surf = go.Surface(z=s, showscale = False)
+        testfig.add_trace(surf, row = 2, col = i + 1)
+    testfig.show("browser+png")
+    return testfig
+
+# function for making the final report
+def make_profile_report(file = None, smoothing = None):
+    '''
+    Function that makes the final report of the profile analysis.
+
+    Parameters
+    ----------
+    file : Path object, optional
+        Location of the file you want to analyze. The default is None.
+    smoothing : dict, optional
+        contains smoothign values for form, wave, and rough splines. The default is None.
+
+    Returns
+    -------
+    plotly figure object
+        The final figure object, in case we want to do more with it.
+
+    '''
+    
+    #read the file of interest
+    verts, faces, xyz_array, xy_scale = process_zygos_xyz(file)
+
+    # use a loop to remove NAN values, while the exist
+    if np.any(np.isnan(xyz_array)) == False: #there are no nan values to hand
+        print("no nan values to handle!")
+    while np.any(np.isnan(xyz_array)) == True:
+        xyz_array = xyz_average_out_nanvalues(xyz_array)
+    
+    #% Set up a plot, so we can determine the correct values of s to use....
+    splines, data = raw_form_wave_rough(xyz_array, s_large = smoothing["form"], s_wave = smoothing["wave"], s_rough = smoothing["rough"])
+
+    z_waviness = splines[1] # just for conveience sake, we can give this a name...
+    z_roughness = splines[2] # just for conveience sake, we can give this a name...
+    
+    bs = 0.02 # separatino for the bottom subplots
+    us = 2*bs # separatino for the top of ht ebottom
+    
+    #
+    # REDO in order to have the same analysis for form, waviness, and roughness?
+    # should we do areal rotation, and then show profiles for median, max, etc, roughnesses???
+    # so... 3d, then areal roughness, NN and CORR analysis, then  areal rotation, then 
+    
+    
+    report = make_subplots(rows = 17, cols = 9, vertical_spacing=0.02, horizontal_spacing=0.01,
+                           specs=[# 1 surface data, 2 surface splines, 3 peak-valley scatter, 4 peak-valley NN, 5 peak-valley correlation, 6 areal, 7 areal-angular, 8 exemplar parallel, 9 exemplar perpendicular, 
+                               [{"type":"scene", "rowspan":5}, {"type":"scene","rowspan":5}, {"rowspan":5}, {}, {"rowspan":2}, {"rowspan":2}, {"rowspan":5}, {}, {}], 
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {"rowspan":2}, {"rowspan":2}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                                                      #
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                                                       #
+                               [{"type":"scene", "rowspan":5}, {"type":"scene","rowspan":5}, {"rowspan":5}, {}, {"rowspan":2}, {"rowspan":2}, {"rowspan":5}, {}, {}], 
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {"rowspan":2}, {"rowspan":2}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                                                      #
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                                                   #
+                               [{"type":"scene", "rowspan":5}, {"type":"scene","rowspan":5}, {"rowspan":5}, {}, {"rowspan":2}, {"rowspan":2}, {"rowspan":5}, {}, {}], 
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               [{}, {}, {}, {}, {"rowspan":2}, {"rowspan":2}, {}, {}, {}],
+                               [{}, {}, {}, {}, {}, {}, {}, {}, {}],
+                               ],
+                           #row_heights = [],
+                           subplot_titles = [
+        "raw data",          f"form spline (s = {smoothing['form']})",  "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "raw - form",        f"wave spline (s = {smoothing['wave']})",  "summit/valley positions", "summit nearest neighbor distances", "summit correlation", "areal roughness", "angular roughness", "x profiles", "y profiles",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "",                   "",            "",                        "valley nearest neighbor distances", "valley correlation", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "raw - form - wave", f"rough spline (s = {smoothing['rough']})", "summit/valley positions", "summit nearest neighbor distances", "summit correlation", "areal roughness", "angular roughness", "x profiles", "y profiles",
+        "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+        "",                   "",            "",                        "valley nearest neighbor distances", "valley correlation", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
+                                             ]
+                           )
+    
+    
+    #% make the plots for the form, formspline, waviness, waviness spline, rougnness, and roughness spline
+    
+    print("building surface plots (step 1/8)")
+    for i, d in enumerate(data):
+        make_surface_plot(d, col = 1, row =6*i+1, fig = report, scale = xy_scale)
+    
+    for i, s in enumerate(splines):
+        make_surface_plot(s, col = 2, row = 6*i+1, fig = report, scale = xy_scale)
+    
+    
+    #% make exemplary profiles, two of them 90 degrees rotated
+    print("building exemplary plots (step 2/8)")
+    
+    make_exemplar_profiles_plot(z_waviness, col = 8, row = 7, fig = report) # 
+    make_exemplar_profiles_plot(np.transpose(z_waviness), col = 9, row = 7, fig = report) # rotated 90 degrees
+    
+    make_exemplar_profiles_plot(z_roughness, col = 8, row = 13, fig = report)
+    make_exemplar_profiles_plot(np.transpose(z_roughness), col = 9, row = 13, fig = report) # rotated 90 degrees
+    
+    
+    #% Make the areal rougness plot... label with mean roughness, rms, stdev, skew, and kurtosis
+    print("building areal roughness plots (step 3/8)")
+    
+    all_wave_points_flat = z_waviness.flatten() - np.mean(z_waviness.flatten())
+    make_areal_z_hist(all_wave_points_flat, fig = report, row = 7, col = 6)
+    
+    robust_wave_points_flat = reject_outliers_median(all_wave_points_flat, robust = 6)
+    make_areal_z_hist(robust_wave_points_flat, fig = report, row = 10, col = 6)
+    
+    
+    all_rough_points_flat = z_roughness.flatten() - np.mean(z_roughness.flatten())
+    make_areal_z_hist(all_rough_points_flat, fig = report, row = 13, col = 6)
+    
+    robust_rough_points_flat = reject_outliers_median(all_rough_points_flat, robust = 6)
+    make_areal_z_hist(robust_rough_points_flat, fig = report, row = 16, col = 6)
+    
+    #% make 9-point peak/valley plot
+    print("building peak/valley scatter plots (step 4/8)... slow")
+    
+    rough_summit_zs, rough_summit_coords, rough_valley_zs, rough_valley_coords = areal_summits_valleys(z_roughness, scale = xy_scale)
+    wave_summit_zs, wave_summit_coords, wave_valley_zs, wave_valley_coords = areal_summits_valleys(z_waviness, scale = xy_scale)
+    
+    def make_peak_valley_scatter(summit_coords, valley_coords, fig = None, col = 1, row = 1):
+        if fig == None:
+            fig = make_subplots()
+    
+        summit_x, summit_y = [], []    
+        for coords in summit_coords:
+            summit_x.append(coords[0])
+            summit_y.append(coords[1])
+            
+        valley_x, valley_y = [], [] 
+        for coords in valley_coords:
+            valley_x.append(coords[0])
+            valley_y.append(coords[1])
+        
+        rough_summit_trace = go.Scatter(x = summit_x, y = summit_y, mode = "markers", marker = dict(size = 2, opacity = 0.66, color = "darkblue"), showlegend = False)
+        rough_valley_trace = go.Scatter(x = valley_x, y = valley_y, mode = "markers", marker = dict(size = 2, opacity = 0.66, color = 'red'), showlegend = False)
+        
+        fig.add_trace(rough_summit_trace, row = row, col = col)
+        fig.add_trace(rough_valley_trace, row = row, col = col)
+        fig.update_yaxes(title = "distance /microns", range=[0, len(z_roughness)*xy_scale],  row = row, col = col)
+        fig.update_xaxes(title = "distance /microns", range=[0, len(z_roughness)*xy_scale],  row = row, col = col)
+        
+        
+        return fig
+    
+    make_peak_valley_scatter(wave_summit_coords, wave_valley_coords, fig = report, row = 7, col = 3)
+    
+    make_peak_valley_scatter(rough_summit_coords, rough_valley_coords, fig = report, row = 13, col = 3)
+    
+    #%
+    # get some simulated data to use in our plots. 
+    sim_rough_summit_coords = np.transpose(
+        np.array(
+            [np.random.randint(0, len(xyz_array), len(rough_summit_zs)),  # get numbers that fall within the possible x-indices, get as many as we have peaks
+             np.random.randint(0, len(xyz_array[0]), len(rough_summit_zs))] # get numbers that fall within the possible y-indices, get as many as we have peaks
+            )
+        ) * xy_scale  # at the end, we can broadcast to all the indices
+    
+    # then repeat for the valleys
+    sim_rough_valley_coords = np.transpose(
+        np.array(
+            [np.random.randint(0, len(xyz_array), len(rough_valley_zs)),  
+             np.random.randint(0, len(xyz_array[0]), len(rough_valley_zs))]
+            )
+        ) * xy_scale  # at the end, we can broadcast to all the indices
+    
+    sim_wave_summit_coords = np.transpose(
+        np.array(
+            [np.random.randint(0, len(xyz_array), len(wave_summit_zs)),  # get numbers that fall within the possible x-indices, get as many as we have peaks
+             np.random.randint(0, len(xyz_array[0]), len(wave_summit_zs))] # get numbers that fall within the possible y-indices, get as many as we have peaks
+            )
+        ) * xy_scale  # at the end, we can broadcast to all the indices
+    
+    # then repeat for the valleys
+    sim_wave_valley_coords = np.transpose(
+        np.array(
+            [np.random.randint(0, len(xyz_array), len(wave_valley_zs)),  
+             np.random.randint(0, len(xyz_array[0]), len(wave_valley_zs))]
+            )
+        ) * xy_scale  # at the end, we can broadcast to all the indices
+    
+    
+    
+    #% make the peak/valley nearest neighbor plot label with mean, stdev, skew, kurosis
+    
+    # make somethign that handles if there is too few peaks or valleys
+    print("building nearest neighbor plots (step 5/8)")
+    try:
+        peak_valley_NN_plot([wave_summit_coords, sim_wave_summit_coords], [wave_valley_coords, sim_wave_valley_coords], fig = report, col = 4, row = 7)
+    except:
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 4, row = 8)
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 4, row = 10)
+    
+    try:
+        peak_valley_NN_plot([rough_summit_coords, sim_rough_summit_coords], [rough_valley_coords, sim_rough_valley_coords], fig = report, col = 4, row = 13)
+    except:
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 4, row = 14)
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 4, row = 16)
+    
+    
+    #% make the peak/valley correlation plot <- interpret with respect to gaussian???
+    print("building correlation plots (step 6/8)... slow")
+    try:
+        peak_valley_corr_plot([wave_summit_coords, sim_wave_summit_coords], [wave_valley_coords, sim_wave_valley_coords], fig = report, col = 5, row = 7)
+    except:
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 5, row = 8)
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 5, row = 10)
+    
+    try: 
+        peak_valley_corr_plot([rough_summit_coords, sim_rough_summit_coords], [rough_valley_coords, sim_rough_valley_coords], fig = report, col = 5, row = 13)
+    except:
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 5, row = 14)
+        report.add_annotation(text = "too few peaks and valleys.", showarrow = False, col = 5, row = 16)
+    
+    
+    
+    #% make the angular dependence plot.
+    print("building angular dependence plots (step 7/8)... slow")
+    
+    make_angular_profile_plot(z_waviness, fig = report, col = 7, row = 7)
+    make_angular_profile_plot(z_roughness, fig = report, col = 7, row = 13)
+    
+    #% save plot as png or pdf
+    print("rendering plots (step 8/8)... slow")
+    
+    report.update_layout(title = f"{file.stem}", template = "simple_white", width = 9*300, height = 17/5*300)
+    report.show("browser+png")
+    report.write_image(file.with_suffix(".png"))
+    return report
+
+###
+# PREPING THINGS FOR PLOTTING IN BLENDER
+###
+def write_verts_faces_to_file (file, verts = [], faces = []):
+    print(f"writing {file}")
+    with open(file.with_suffix(".csv"), 'w') as f:
+        for coords in [verts, faces]: # go through verts first, then faces
+            for row in coords:
+                for element in row:
+                    f.write(f'{element}, ')
+                f.write("\n")
+                
+def prep_for_blender (file = None, smoothing = None):
+    '''
+    Writes files that can be read by another script for importing surfaces into blender. 
+    This file takes raw data, and then gets form, wave, and rough splines.  Then write 6 files from them.
+
+    Parameters
+    ----------
+    file : path object, optional
+        the file that we want to extract form, wave, and rough and then prepare files for blender. The default is None.
+    smoothing : dict, optional
+        contains values for form, wave, and rough splines. The default is None.
+
+    Returns
+    -------
+    None.
+
+    '''
+    verts, faces, xyz_array, xy_scale = process_zygos_xyz(folder/file)
+    
+    # use a loop to remove NAN values, while the exist
+    if np.any(np.isnan(xyz_array)) == False: #there are no nan values to hand
+        print("no nan values to handle!")
+    while np.any(np.isnan(xyz_array)) == True:
+        xyz_array = xyz_average_out_nanvalues(xyz_array)
+        
+    #% Set up a plot, so we can determine the correct values of s to use....
+    splines, data = raw_form_wave_rough(xyz_array, s_large = smoothing["form"], s_wave = smoothing["wave"], s_rough = smoothing["rough"])
+    
+    for name, surface in zip(['1form', '2wave', '3rough', '1raw', '2middle', '3final' ], [splines[0], splines[1], splines[2], data[0], data[1], data[2]]):
+        verts, faces = xyz_to_verts_faces(surface)
+        write_verts_faces_to_file(file.parent / Path(f"{file.stem}_{name}.csv"), verts = verts, faces = faces)
+    print("files written!")
+
+#%% First identify the way you want to process the data
+
+folder = Path("/Users/benjaminlear/My Drive/PennState/Research/Data/Sarah Phillips")
+xyz_file = Path("Laser Fast 3.xyz")
+
+# then set up the parameters for splines
+smoothing = dict(
+    form = 1, # roughly the feature size, in terms of the width of the smallest dimension
+    wave = 104, # roughly the size of the features you want, in microns
+    rough = 0 # will just interpolate, no smoothing. 
+    )
+
+#test out the spline parameters
+test_smoothing_params(file = folder/xyz_file, smoothing = smoothing)
+
+#%% Then make the final report. Once we have numbers for the form, waveiness, and roughness processing, we can START THE PLOT
+make_profile_report(file = folder/xyz_file, smoothing = smoothing)
+
+#%% Can also use the above parameters to write out files that can be read into blender.
+prep_for_blender(file = folder/xyz_file, smoothing = smoothing)
+
+
+
+
+
+
+
+#%% Make a plot of roughness versus wave size
+
+folder = Path("/Users/benjaminlear/My Drive/PennState/Research/Data/Sarah Phillips")
+xyz_file = Path("Oven 1.4.xyz")
+
+step = 1
+s_values = np.linspace(step, 200, int(200/step))
+
+
+
+
+#read the file of interest
+verts, faces, xyz_array, xy_scale = process_zygos_xyz(folder/xyz_file)
+
+# use a loop to remove NAN values, while the exist
+if np.any(np.isnan(xyz_array)) == False: #there are no nan values to hand
+    print("no nan values to handle!")
+while np.any(np.isnan(xyz_array)) == True:
+    xyz_array = xyz_average_out_nanvalues(xyz_array)
+
+s = 1
+roughness = 0
+last = 1
+ss = []
+roughnesses = []
+while last != roughness:
+    last = roughness
+    #% Set up a plot, so we can determine the correct values of s to use....
+    splines, data = raw_form_wave_rough(xyz_array, s_large = smoothing["form"], s_wave = s, s_rough = smoothing["rough"])
+    
+    zs = data[2]
+    
+    roughness = np.mean(abs(zs - np.mean(zs)))
+    
+    roughnesses.append(roughness)
+    ss.append(s)
+    print(f"spline size: {s}, roughness = {roughness}")
+    s=s+step
+#
+
+#then, fit a spline, find the lowest derivative (that is not zero), and sepect that index
+from scipy.interpolate import UnivariateSpline
+#%%
+splination = 2e-7
+index = 0
+while (index == 0 or index == len(ss)-1) and splination > 1e-20:
+    splination = splination/2
+
+    spline = UnivariateSpline(ss, roughnesses, s=splination)
+
+    df_dx_np = np.gradient(spline(ss), ss)
+    
+    index = np.where(df_dx_np == min(df_dx_np))[0][0]
+    print(f"{splination}, {index}")
+    
+    
+print(splination)
+import quickPlots as qp
+
+wave_dep = qp.quickPlot([ss, ss], [roughnesses, spline(ss)], xlabel = "spline length", ylabel = "roughness", mode = "lines")
+wave_dep.show("browser")
+
+der_rough = qp.quickPlot(ss, df_dx_np)
+der_rough.show("browser")
+
+print(f"setting the wave to {ss[index]}")
+#%%
+# then set up the parameters for splines
+smoothing = dict(
+    form = 1, # roughly the feature size, in terms of the width of the smallest dimension
+    wave = 10, # roughly the size of the features you want, in microns
+    rough = 0 # will just interpolate, no smoothing. 
+    )
+
+#test out the spline parameters
+test_smoothing_params(file = folder/xyz_file, smoothing = smoothing)
+
+
+#%% Get statistical info for angular stuff
+# reject outliers for the angular and sampled profiles
+# randomly sample lines from the 20 lines. <- get all 20*180 lines and randomly pull from them. 
+
+
+
+splines, data = raw_form_wave_rough(xyz_array, s_large = smoothing["form"], s_wave = smoothing["wave"], s_rough = smoothing["rough"])
+
+surface = splines[2] # define the surface we want to work with
+robust = 6
+z_score = 2.576
+
+surf_med = np.median(surface)
+surf_MAD = np.median(np.abs(surface - surf_med))
+    
+# Define a threshold based on MAD, you might choose a different multiplier
+surf_thresh = robust * surf_MAD
+    
+
+angular_profiles = get_angular_profiles(surface, min_angle = 0, max_angle = 180, num_lines = 20) # get a dictionary of all profiles.  Key = angle. 
+
+# this filters based on statistics of the FULL surface. 
+robust_angular_profiles = {} # dictionary to hold robust profiles
+for key in angular_profiles:
+    robust_angular_profiles[key] = []
+    for profile in angular_profiles[key]:
+        filtered_mask = (profile > (surf_med - surf_thresh)) & (profile < (surf_med + surf_thresh))
+        robust_angular_profiles[key].append(profile[filtered_mask])
+
+
+# create two plots.
+ang_plot = make_angular_profile_plot(surface, angular_profiles=robust_angular_profiles)
+make_angular_profile_plot(surface, angular_profiles=angular_profiles, fig = ang_plot)
+ang_plot.update_traces(line = dict(color = 'darkmagenta', width  = 2), selector = 0)
+ang_plot.update_layout(template = "simple_white")
+ang_plot.show("png+browser")
+
+#% Taking the robust profiles, randomly sample 20 lines, 180 times. Bin and plot. 
+rand_rough = []
+all_rough = []
+for sample in range(0,180,1): # we want 180 samples 
+    temp_rough = []
+    for a, p in zip(np.random.randint(0, 180, 20), np.random.randint(0, 20, 20)):
+        rand_profile = robust_angular_profiles[a][p]
+        temp_rough.append(np.mean(abs(rand_profile - np.mean(rand_profile))))
+        all_rough.append(np.mean(abs(rand_profile - np.mean(rand_profile))))
+        
+    rand_rough.append(np.mean(temp_rough))
+
+#rand_rough = all_rough
+
+r_mean = np.mean(rand_rough)
+r_std = np.std(rand_rough)
+
+r_centers, r_counts = qp.binData(rand_rough)
+a_centers, a_counts = qp.binData(ang_plot["data"][0]["y"])
+
+
+#%
+rangular_plot = make_subplots(rows = 1, cols = 3)
+
+#histogram of random lines
+rhist = go.Bar(x = r_counts, y = r_centers, orientation = "h", showlegend=False)
+rangular_plot.add_trace(rhist, row = 1, col = 1)
+
+#histogram of the angular plot
+ahist = go.Bar(x = a_counts, y = a_centers, orientation = "h", showlegend=False)
+rangular_plot.add_trace(ahist, row = 1, col = 3)
+
+rangular_plot.add_trace(ang_plot["data"][0], row = 1, col = 2)
+
+
+#add some guidlines...
+upper = go.Scatter(x = [0, 180], y = [r_mean + z_score*r_std]*2, mode = "lines", line = dict(color = "black"), showlegend = False)
+lower = go.Scatter(x = [0, 180], y = [r_mean - z_score*r_std]*2, mode = "lines", line = dict(color = "black"), showlegend = False)
+rangular_plot.add_trace(upper, row = 1, col = 2)
+rangular_plot.add_trace(lower, row = 1, col = 2)
+
+y_min = min([min(r_centers), min(a_centers), min(ang_plot["data"][0]["y"])])
+y_max = max([max(r_centers), max(a_centers), max(ang_plot["data"][0]["y"])])
+y_range = y_max - y_min
+
+rangular_plot.update_yaxes(range = [y_min - 0.05*y_range, y_max + 0.05*y_range])
+
+rangular_plot.update_traces(row = 1, col = 2, line = dict(width = 2))
+
+rangular_plot.update_yaxes(row = 1, col = 1, showline = False, showticklabels = False, ticks = "")
+
+rangular_plot.update_xaxes(row = 1, col = 1, range = [max(r_counts), 0])
+
+rangular_plot.update_layout(template = "simple_white", title_text =  str(xyz_file.stem))
+rangular_plot.show("png+browser")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%%
+# randomly sample 20 lines, each of a different angle
+rand_rough = [] # to hold the averages of the roughnesses of random angles
+for sample in range(0,180,1): # we want 180 samples 
+    print(f"round {sample}")
+    # create 20 random angles between 0 and 180 (in integers)
+    rand_angles = np.random.randint(0, 180, 20)
+    temp_rough = [] # build up the 20 angles. 
+    for ra in rand_angles:
+        temp_profile = get_angular_profiles(splines[1], min_angle = 0, max_angle = 180, num_lines = 20)
+        temp_rough.append(np.mean(abs(temp_profile - np.mean(temp_profile))))
+    
+    rand_rough.append(np.mean(temp_rough))
+
+r_centers, r_counts = qp.binData(rand_rough)
+
+angular_plot = make_angular_profile_plot(splines[1])
+
+a_centers, a_counts = qp.binData(angular_plot["data"][0]["y"])
+
+#%%
+rangular_plot = make_subplots(rows = 1, cols = 3)
+
+rhist = go.Bar(x = r_counts, y = r_centers, orientation = "h", showlegend=False)
+rangular_plot.add_trace(rhist, row = 1, col = 1)
+
+ahist = go.Bar(x = a_counts, y = a_centers, orientation = "h", showlegend=False)
+rangular_plot.add_trace(ahist, row = 1, col = 3)
+
+rangular_plot.add_trace(angular_plot["data"][0], row = 1, col = 2)
+
+y_min = min([min(r_centers), min(a_centers), min(angular_plot["data"][0]["y"])])
+y_max = max([max(r_centers), max(a_centers), max(angular_plot["data"][0]["y"])])
+y_range = y_max - y_min
+
+rangular_plot.update_yaxes(range = [y_min - 0.05*y_range, y_max + 0.05*y_range])
+
+rangular_plot.update_traces(row = 1, col = 2, line = dict(width = 2))
+
+rangular_plot.update_yaxes(row = 1, col = 1, showline = False, showticklabels = False, ticks = "")
+
+rangular_plot.update_xaxes(row = 1, col = 1, range = [max(r_counts), 0])
+
+rangular_plot.update_layout(template = "simple_white", title_text =  str(xyz_file.stem))
+rangular_plot.show("browser")
+
+#%%
+x=np.linspace(0, 180, 180)
+tempplot = qp.quickPlot(np.linspace(0, 180, 180), rand_rough)
+tempplot.show('browser')
