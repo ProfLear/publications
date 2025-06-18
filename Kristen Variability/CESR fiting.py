@@ -374,7 +374,8 @@ def _(np):
         atom_volume     = 4/3*np.pi*atom_radius**3
     
     
-        return mu_0 - mu_volume/(particle_volume/atom_volume) + mu_surface*fractional_coverage * (shell_volume/atom_volume)/(particle_volume/atom_volume) 
+        #return mu_0 - mu_volume/(particle_volume/atom_volume)**3 + mu_surface*fractional_coverage * (shell_volume/atom_volume)/(particle_volume/atom_volume) 
+        return mu_0 + mu_volume*(atom_radius/particle_radius)**3 + mu_surface*fractional_coverage * (particle_radius**3 - (particle_radius-2*atom_radius)**3)/(particle_radius**3) 
 
     # relaxation
     def get_linewidth_from_size(size, w_0, w_matrix, offset):
