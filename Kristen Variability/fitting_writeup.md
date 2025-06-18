@@ -49,9 +49,12 @@ Using this approach, we can fit a model, where each particle is described by a L
 
 And if we then do the same, but shift to a Voigt profile, where the resonance position changes, but the $\gamma$ and $\sigma$ values do not, we obtain (in 40 minutes):
 
-![[Pasted image 20250618151550.png]]
+![[Pasted image 20250618152017.png]]
 This is very good. I am not sure if the Gaussian component is 'real' or if it is just smoothing out the discrete counting we have, but at least there is a reasonable physical explanation for it.
 # Next
-I think the next thing we need to do is to figure out what might be useful values for all these things.  Maybe convert the values we have into units that are physically relevant... like $g$ space and seconds. 
-
-Also, is it worth providing a guess for g_metal? Or even $\Delta g_{volume}$, if we know what the atom should be at?  Or is this really meaningful, as we get to a place that the electronic energy levels spread out too much? Maybe we no longer expect smooth transitions.
+- [ ] Compare this approach to the powder pattern fitting (lorentzian and voigt) 
+- [ ] think about how to extract a meaningful value of resonance for a population?
+	- do I use the mean value from a lognormal fit to talk about a mean value of the g-factor?
+	- do I use the fit or do I try to calculate a mean value from the experimental data?  How to do this for lognormal?
+- [ ] figure out what might be useful values for all these things.  Maybe convert the values we have into units that are physically relevant... like $g$ space and seconds. 
+- [ ]  is it worth providing a guess for g_metal? Or even $\Delta g_{volume}$, if we know what the atom should be at?  Or is this really meaningful, as we get to a place that the electronic energy levels spread out too much? Maybe we no longer expect smooth transitions.
