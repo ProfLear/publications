@@ -49,9 +49,20 @@ Using this approach, we can fit a model, where each particle is described by a L
 
 And if we then do the same, but shift to a Voigt profile, where the resonance position changes, but the $\gamma$ and $\sigma$ values do not, we obtain (in 40 minutes):
 
-![[Pasted image 20250618152017.png]]
+![[Pasted image 20250616152210.png]]
 This is very good. I am not sure if the Gaussian component is 'real' or if it is just smoothing out the discrete counting we have, but at least there is a reasonable physical explanation for it.
+
+
+## We can compare this to a powder pattern
+
+The best powder pattern fit comes from fitting a Voigt where the resonance position, $\gamma$ and $\sigma$ also change with orientation. This took ~14 minutes to fit
+
+![[Pasted image 20250621220025.png]]
+
+When one compares the AIC, it is clear that the size effects are to be preferred, but the fit is still good here, and also has a solid foundation. 
+
 # Next
+
 - [ ] Compare this approach to the powder pattern fitting (lorentzian and voigt) 
 - [ ] think about how to extract a meaningful value of resonance for a population?
 	- do I use the mean value from a lognormal fit to talk about a mean value of the g-factor?

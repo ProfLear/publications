@@ -27,16 +27,36 @@ def _():
     from pathlib import Path
     from scipy.integrate import cumulative_trapezoid
     from scipy.signal import hilbert
+    from scipy.constants import physical_constants
+
+    # constants we will need, assumes the magnetic field is in T
+    h = physical_constants["Planck constant"][0] # J s
+    u_B = physical_constants["Bohr magneton"][0] # J T-1
+    g_e = physical_constants["electron g factor"] # no units
+
+    n_mesh_points = 500 # number of points in the sphere we want to sample
+
+    # Model 7: Lorentzian size effects
+    g_metal = 2.15
     return (
         Model,
         Path,
         cumulative_trapezoid,
+        g_metal,
+        h,
         hilbert,
         make_subplots,
         mo,
+        n_mesh_points,
         np,
         qp,
+        u_B,
     )
+
+
+@app.function
+def convert_B_to_g():
+    return
 
 
 @app.cell
@@ -71,8 +91,8 @@ def _(make_subplots):
             abs(min(fit_result.best_fit)),
             ])
 
-        plot.update_xaxes(showline = False)
-        plot.update_yaxes(range = [-1.05*ymax, 1.05*ymax], zeroline = True)
+        plot.update_xaxes(title = "magnetic field /T", showline = False)
+        plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True)
         plot.update_layout(template = "simple_white", title = f"{fit_result.model.name}: AIC:{int(fit_result.aic)}")
         plot.show()
 
@@ -138,6 +158,7 @@ def _(cumulative_trapezoid, np):
 
     # import EPR
     def import_epr_data(file):
+        # need to import magnetic field in units of T
         B_fields, intensities = [], []
 
         instrument_ID = get_instrument_ID(file)
@@ -146,10 +167,10 @@ def _(cumulative_trapezoid, np):
             with open(file, "r") as f:
                 for line in f:
                     if "Frequency;" in line:
-                        instrument_frequency = float(line.split(";")[1])*10**9
+                        instrument_frequency = float(line.split(";")[1])*10**9 # convert to Hz
                     if line[0].isdigit():
                         B, I = line.split(";")
-                        B_fields.append(float(B))
+                        B_fields.append(float(B)/1) # convert to mT
                         intensities.append(float(I))
 
         if instrument_ID == "##":
@@ -162,7 +183,7 @@ def _(cumulative_trapezoid, np):
                     #print(line)
                     if line[0].isdigit():
                         B, I = line.split("   ") #separator is 3 spaces...
-                        B_fields.append(float(B))
+                        B_fields.append(float(B)/10) # convert to mT
                         intensities.append(float(I))
 
 
@@ -348,18 +369,104 @@ def _(hilbert, np):
 
 
 @app.cell
-def _():
-    # powder pattern generator
+def _(n_mesh_points, np):
+    # powder pattern generator stuff
+
+    def sphere_sampling(mesh_sphere) :
+        import numpy as np
+        gr = (1 + 5**0.5)/2  #golden ratio
+    
+        #this is one approach, that uses the appraoch from LATTICE 3 in Extreme learning: 
+        #http://extremelearning.com.au/evenly-distributing-points-on-a-sphere/
+    
+        #we are going to generate a paired list of points. That is, two lists, where common idexes represent a pair of values. 
+
+        #start with the i = 0 points.  This will be theta = 0, phi = 0...
+        # we are starting with x and y, because the appraoch first generates the uniform sampling of a rectangle, and then converts this to a sphere. 
+        # so we start in cartesian space...
+    
+        #for speed, we are going to work with a list first, and then convert this to an array once we have the full length...
+        x = [0]
+        y = [0]
+
+        #then move on to i = 1 through i = mesh_sphere-1
+        #i is both an index and the way we calculate the values
+        i = 1
+
+        while i < mesh_sphere :
+            x.append((i + 6) / (mesh_sphere + 11))
+            y.append(i / gr)
+            i += 1
+
+        #finally, the value for i = mesh_sphere
+
+        x.append(1)
+        y.append(0)
+    
+        #then we convert to an array to make math easy... 
+        x = np.array(x)
+        y = np.array(y)
+    
+        y = y % 1  #we want to convert to the unit square, and we do this by using the modulo operator
+    
+        # then we want to convert the unit square to equally spaced polar coordinates. 
+        thetas = np.arccos(2*x-1)
+        phis = 2*np.pi*y
+    
+        #convert the array back to list, so that sorting through it is easier...
+        thetas = np.array(thetas).tolist()
+        phis = np.array(phis).tolist()
+
+        #print(thetas)
+
+        #########
+        # REDUCE THE SAMPLING TO A QUADRANT
+        ########
+        # the above gives a uniform sampling of a sphere, but we really only need 1/8 of a sphere. We need theta 0 -> pi/2 and phi 0 -> pi/2  Thus, the simulation will be 8x faster!  So, let us trim this...
+
+        #below is one way to do this.  There is CERTAINLY a more elegant way to do this...
+    
+        #first, collect the thetas that are correct...
+        # we are going to step through the theta vector, and pull out all thetas with the right value, as well as their paired value in phi..
+        tp = 0
+        temp_thetas1 = []
+        temp_phis1   = []
+        while tp < len(thetas) :
+            if thetas[tp] <= np.pi/2 :
+                temp_thetas1.append(thetas[tp])
+                temp_phis1.append(phis[tp])
+            tp += 1  #advance the counter
+      
+    
+        #then, collect the phis that are correct...
+        tp = 0
+        temp_thetas2 = []
+        temp_phis2 = []
+        while tp < len(temp_phis1) :
+            if temp_phis1[tp] <= np.pi/2 :
+                temp_thetas2.append(temp_thetas1[tp])
+                temp_phis2.append(temp_phis1[tp])
+            tp += 1  #advance the counter
+    
+    
+
+        thetas = temp_thetas2
+        phis = temp_phis2
+    
+        #lets keep the output as lists for right now.  I think that is good for speeding up the latter portions...
+        # we can always convert them to arrays later, if we want. 
+        return [thetas, phis]
 
 
-    return
+
+    thetas_phis = sphere_sampling(n_mesh_points*8)
+
+    def get_values_from_orientation(x_value, y_value, z_value, orientations):
+        thetas, phis = orientations # unpack this
+        return  (x_value**2 * (np.sin(thetas) * np.cos(phis))**2 + y_value**2 * (np.sin(thetas) * np.sin(phis))**2 + z_value**2 * np.cos(thetas)**2 )**0.5
 
 
-@app.cell
-def _():
-    # accounting for population
-
-    return
+    return get_values_from_orientation, thetas_phis
 
 
 @app.cell
@@ -400,9 +507,9 @@ def _(
     trim_data,
 ):
     # import the data we will be using
-    epr_file = Path(r"C:\Users\benle\Downloads\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv")
+    epr_file = Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv")
 
-    size_file = Path(r"C:\Users\benle\Downloads\Feret.csv")
+    size_file = Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide SIZES.csv")
 
 
     exp_data, instrument_frequency = import_epr_data(epr_file)
@@ -422,7 +529,12 @@ def _(
     trimmed_exp_plot.update_layout(title = f"instrument frequency = {instrument_frequency} Hz")
     trimmed_exp_plot.update_traces(showlegend = False)
     trimmed_exp_plot.show()
-    return exp_lineshape_indicies, sizes, trimmed_exp_data
+    return (
+        exp_lineshape_indicies,
+        instrument_frequency,
+        sizes,
+        trimmed_exp_data,
+    )
 
 
 @app.function
@@ -584,7 +696,7 @@ def _(
         ("D",     Model3_result.params["D"].value, True, 0, 1),
         ("mu",    Model3_result.params["mu"].value, True, 0, None),
         ("sigma", Model2_result.params["sigma"].value, True, 0, None),
-        ("gamma", Model2_result.params["gamma"].value, True, 0, None),
+        ("gamma", Model2_result.params["gamma"].value/10, True, 0, None),# start with this as a minor component
         ("a",     Model3_result.params["a"].value , True, None, None),
         ("b",     Model3_result.params["b"].value, True, None, None),
     )
@@ -599,14 +711,55 @@ def _(
 
 
 @app.cell
-def _():
+def _(
+    Model,
+    Model1_result,
+    exp_lineshape_indicies,
+    get_values_from_orientation,
+    lorentzian,
+    np,
+    plot_fit,
+    thetas_phis,
+    trimmed_exp_data,
+):
     # Model 5: Powder Lorentzian
-    return
+    def lorentzian_powder_epr(x, I, Bx, By, Bz, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
 
+        summed_absorptions = np.zeros_like(x)
+    
+        # first, get the vectors of the g-value, and gamma
+        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
+        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
 
-@app.cell
-def _():
-    # Model 6: Powder Voight
+        # then get the mean position in B-field
+        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
+
+        for B, g in zip(B_resonances, gammas):
+            summed_absorptions = summed_absorptions+lorentzian(x, 1, B, g)
+
+        epr = np.gradient(I*summed_absorptions, x)
+
+        return epr+linear_background(x, a, b)
+
+    Model5 = Model(lorentzian_powder_epr, independent_vars = ["x", "thetas_phis"])
+    Model5_params = Model5.make_params()
+    Model5_params.add_many(
+        ("I",       Model1_result.params["I"].value/len(thetas_phis), True, 0, None),
+        ("Bx",      trimmed_exp_data[0][exp_lineshape_indicies[0]], True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("By",      trimmed_exp_data[0][exp_lineshape_indicies[1]], True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("Bz",      trimmed_exp_data[0][exp_lineshape_indicies[2]], True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("gamma_x", Model1_result.params["gamma"].value/3      , True, 0, None),
+        ("gamma_y", Model1_result.params["gamma"].value/3      , True, 0, None),
+        ("gamma_z", Model1_result.params["gamma"].value/3      , True, 0, None),
+        ("a",       Model1_result.params["a"].value, True, None, None),
+        ("b",       Model1_result.params["b"].value, True, None, None),
+        )
+
+    Model5_result = Model5.fit(trimmed_exp_data[1], params = Model5_params, x = trimmed_exp_data[0], thetas_phis = thetas_phis)
+    print(Model5_result.aic)
+    print(Model5_result.fit_report())
+
+    plot_fit(Model5_result)
     return
 
 
@@ -614,20 +767,95 @@ def _():
 def _(
     Model,
     Model1_result,
+    Model2_result,
     exp_lineshape_indicies,
+    get_values_from_orientation,
+    np,
+    plot_fit,
+    thetas_phis,
+    trimmed_exp_data,
+    voigt,
+):
+    # Model 6: Powder Voight
+
+    def voigt_powder_epr(x, I, Bx, By, Bz, sigma_x, sigma_y, sigma_z, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
+
+        summed_absorptions = np.zeros_like(x)
+    
+        # first, get the vectors of the g-value, and gamma
+        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
+        sigmas = get_values_from_orientation(sigma_x, sigma_y, sigma_z, thetas_phis)
+        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
+
+        # then get the mean position in B-field
+        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
+
+        for B, s, g in zip(B_resonances, sigmas, gammas):
+            summed_absorptions = summed_absorptions+voigt(x, 1, B, s, g)
+
+        epr = np.gradient(I*summed_absorptions, x)
+
+        return epr+linear_background(x, a, b)
+
+    Model6 = Model(voigt_powder_epr, independent_vars = ["x", "thetas_phis"])
+    Model6_params = Model6.make_params()
+    Model6_params.add_many(
+        ("I",       Model1_result.params["I"].value/len(thetas_phis), True, 0, None),
+        ("Bx",      trimmed_exp_data[0][exp_lineshape_indicies[0]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("By",      trimmed_exp_data[0][exp_lineshape_indicies[1]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("Bz",      trimmed_exp_data[0][exp_lineshape_indicies[2]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("sigma_x", Model2_result.params["sigma"].value/3,            True, 0, None),
+        ("sigma_y", Model2_result.params["sigma"].value/3,            True, 0, None),
+        ("sigma_z", Model2_result.params["sigma"].value/3,            True, 0, None),
+        ("gamma_x", Model2_result.params["gamma"].value/3,            True, 0, None),
+        ("gamma_y", Model2_result.params["gamma"].value/3,            True, 0, None),
+        ("gamma_z", Model2_result.params["gamma"].value/3,            True, 0, None),
+        ("a",       Model1_result.params["a"].value,                  True, None, None),
+        ("b",       Model1_result.params["b"].value,                  True, None, None),
+        )
+
+    Model6_result = Model6.fit(trimmed_exp_data[1], params = Model6_params, x = trimmed_exp_data[0], thetas_phis = thetas_phis)
+    print(Model6_result.aic)
+    print(Model6_result.fit_report())
+
+    plot_fit(Model6_result)
+    return (Model6_result,)
+
+
+@app.cell
+def _(Model6_result, h, instrument_frequency, u_B):
+    gx = h*instrument_frequency/(u_B * Model6_result.params["Bx"]/1000)
+    gy = h*instrument_frequency/(u_B * Model6_result.params["By"]/1000)
+    gz = h*instrument_frequency/(u_B * Model6_result.params["Bz"]/1000)
+
+    print(f"gx = {gx:.4f}")
+    print(f"gy = {gy:.4f}")
+    print(f"gz = {gz:.4f}")
+    print(f"<g> = {(gx+gy+gz)/3:.4f}")
+    return
+
+
+@app.cell
+def _(
+    Model,
+    Model1_result,
+    g_metal,
     get_linewidth_from_size,
     get_resonance_position_from_size,
+    h,
+    instrument_frequency,
     lorentzian,
     np,
     plot_fit,
     sizes,
     trimmed_exp_data,
+    u_B,
 ):
-    # Model 7: Lorentzian size effects
+
     def lorentzian_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, a, b):
         summed_epr = np.zeros_like(x)
         for s in sizes:
-            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14) # divide by 2 to get the radius
+            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14) # divide size by 2 to get the radius
             gamma = get_linewidth_from_size(s/2, gamma_0, gamma_volume, gamma_offset)
             absorbance = lorentzian(x, 1, mu, gamma) 
             summed_epr = summed_epr + absorbance
@@ -640,7 +868,35 @@ def _(
     Model7_params = Model7.make_params()
     Model7_params.add_many(
         ("I",            Model1_result.params["I"].value/len(sizes), True, 0, None),
-        ("mu_0",         trimmed_exp_data[0][exp_lineshape_indicies[2]], True, 0, None), # start at one end of the feature
+        ("mu_0",         1000* h*instrument_frequency / (u_B*g_metal), True, 0, None), #calculate the resonance position from g_metal, and don't change it 1000* h*instrument_frequency / (u_B*g_metal) # start at one end of the feature trimmed_exp_data[0][exp_lineshape_indicies[0]]
+        ("mu_volume",    12737, True, None, None),
+        ("mu_surface",   -16, True, None, None),
+        ("gamma_0",      9.6, True, 0, None),
+        ("gamma_volume", 0, False, None, None),
+        ("gamma_offset", 0, False, 0, None),
+        ("a",            -11031, True, None, None),
+        ("b",            32, True, None, None),
+    )
+
+    Model7_result = Model7.fit(trimmed_exp_data[1], params = Model7_params, x = trimmed_exp_data[0], sizes = sizes)
+    print(Model7_result.aic)
+    print(Model7_result.fit_report())
+
+    plot_fit(Model7_result)
+    return Model7_params, Model7_result
+
+
+@app.cell(disabled=True)
+def _(
+    Model1_result,
+    Model7_params,
+    exp_lineshape_indicies,
+    sizes,
+    trimmed_exp_data,
+):
+    Model7_params.add_many(
+        ("I",            Model1_result.params["I"].value/len(sizes), True, 0, None),
+        ("mu_0",         trimmed_exp_data[0][exp_lineshape_indicies[0]], True, 0, None), #calculate the resonance position from g_metal, and don't change it 1000* h*instrument_frequency / (u_B*g_metal) # start at one end of the feature trimmed_exp_data[0][exp_lineshape_indicies[0]]
         ("mu_volume",    0, True, None, None),
         ("mu_surface",   0, True, None, None),
         ("gamma_0",      Model1_result.params["gamma"].value/len(sizes)**0.5, True, 0, None),
@@ -649,13 +905,7 @@ def _(
         ("a",            Model1_result.params["a"].value, True, None, None),
         ("b",            Model1_result.params["b"].value, True, None, None),
     )
-
-    Model7_result = Model7.fit(trimmed_exp_data[1], params = Model7_params, x = trimmed_exp_data[0], sizes = sizes)
-    print(Model7_result.aic)
-    print(Model7_result.fit_report())
-
-    plot_fit(Model7_result)
-    return (Model7_result,)
+    return
 
 
 @app.cell
@@ -714,6 +964,47 @@ def _(
     print(Model8_result.fit_report())
     plot_fit(Model8_result)
     return (Model8_result,)
+
+
+@app.cell
+def _(
+    Model8_result,
+    get_resonance_position_from_size,
+    h,
+    instrument_frequency,
+    np,
+    qp,
+    sizes,
+    u_B,
+):
+    resonance_positions = []
+    g_values = []
+    for s in sizes:
+        resonance_position = get_resonance_position_from_size(s/2, Model8_result.params["mu_0"], Model8_result.params["mu_volume"], Model8_result.params["mu_surface"], atom_radius = 0.14)
+        g_values.append(h*instrument_frequency / (u_B*resonance_position/1000)) # factor of 1000 to convert to T
+        resonance_positions.append(resonance_position)
+
+    resonance_positions = np.array(resonance_positions)
+
+    g_values = np.array(g_values)
+    log_g_mean = np.mean(np.log(g_values))
+    log_g_variance = np.std(np.log(g_values))**2
+
+    log_size_mean = np.mean(np.log(sizes))
+    log_size_variance = np.std(np.log(sizes))**2
+
+    lognormal_size_mean = np.exp(log_size_mean + log_size_variance/2)
+    lognormal_size_mean_resonance = get_resonance_position_from_size(lognormal_size_mean, Model8_result.params["mu_0"], Model8_result.params["mu_volume"], Model8_result.params["mu_surface"], atom_radius = 0.14)
+
+    print(instrument_frequency)
+    print(f"g_0 = {h*instrument_frequency/(u_B * Model8_result.params["mu_0"]/1000)}")
+    print(f"g_volume = {h*instrument_frequency/(u_B * Model8_result.params["mu_volume"]/1000)}")
+    print(f"g_surface = {h*instrument_frequency/(u_B * Model8_result.params["mu_surface"]/1000)}")
+    print(f"mean g-value = {np.mean(g_values):.4f}")
+    print(f"g-value for mean size = {h*instrument_frequency/(u_B * lognormal_size_mean_resonance/1000):.4f}")
+
+    g_hist = qp.quickHist(x = g_values)
+    return
 
 
 @app.cell
