@@ -54,46 +54,59 @@ def _():
     )
 
 
-@app.function
-def convert_B_to_g():
-    return
-
-
 @app.cell
 def _(make_subplots):
     # for plotting the fit results...
 
-    def plot_fit(fit_result):
-        independent_vars = fit_result.model.independent_vars
-        plot = make_subplots(rows = 2, cols = 1)
-        plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.data, 
-                         mode = "lines", 
-                         line = dict(color = "darkcyan", width = 5), 
-                         showlegend = False
-                        )
-        plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.best_fit,
-                        mode = "lines", 
-                         line = dict(color = "black", width = 2), 
-                         showlegend = False
-                        )
+    def plot_fit(fit_results):
+        '''
+        Accepts a list of fit results, and then plots them, side by side. 
+        '''
+        plot = make_subplots(rows = 2, cols = len(fit_results))
 
-        plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.residual,
-                        mode = "lines", 
-                         line = dict(color = "black", width = 2), 
-                         showlegend = False,
-                         row = 2, col = 1,
-                        )
+        for i, fit_result in enumerate(fit_results):
+            independent_vars = fit_result.model.independent_vars
+            plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.data, 
+                             mode = "lines", 
+                             line = dict(color = "darkcyan", width = 5), 
+                             showlegend = False,
+                             row = 1, col = i+1
+                            )
+            plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.best_fit,
+                            mode = "lines", 
+                             line = dict(color = "black", width = 2), 
+                             showlegend = False,
+                             row = 1, col = i+1
+                            )
 
-        ymax = max([
-            abs(max(fit_result.data)), 
-            abs(min(fit_result.data)),
-            abs(max(fit_result.best_fit)), 
-            abs(min(fit_result.best_fit)),
-            ])
+            plot.add_scatter(x = fit_result.userkws[independent_vars[0]], y = fit_result.residual,
+                            mode = "lines", 
+                             line = dict(color = "black", width = 2), 
+                             showlegend = False,
+                             row = 2, col = i+1,
+                            )
 
-        plot.update_xaxes(title = "magnetic field /T", showline = False)
-        plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True)
-        plot.update_layout(template = "simple_white", title = f"{fit_result.model.name}: AIC:{int(fit_result.aic)}")
+            ymax = max([
+                abs(max(fit_result.data)), 
+                abs(min(fit_result.data)),
+                abs(max(fit_result.best_fit)), 
+                abs(min(fit_result.best_fit)),
+                ])
+
+            plot.update_xaxes(title = "magnetic field /T", showline = False, row = 1, col = i+1)
+            plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True, row = 1, col = i+1)
+
+            plot.update_xaxes(title = "magnetic field /T", showline = False, row = 2, col = i+1)
+            plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True, row = 2, col = i+1)
+
+            plot.add_annotation(text = f"{fit_result.model.name}: AIC:{int(fit_result.aic)}",
+                               showarrow = False,
+                               x = min(fit_result.userkws[independent_vars[0]]),
+                               y = ymax,
+                               row = 1, col = i+1)
+
+    
+        plot.update_layout(template = "simple_white",)
         plot.show()
 
 
@@ -375,16 +388,16 @@ def _(n_mesh_points, np):
     def sphere_sampling(mesh_sphere) :
         import numpy as np
         gr = (1 + 5**0.5)/2  #golden ratio
-    
+
         #this is one approach, that uses the appraoch from LATTICE 3 in Extreme learning: 
         #http://extremelearning.com.au/evenly-distributing-points-on-a-sphere/
-    
+
         #we are going to generate a paired list of points. That is, two lists, where common idexes represent a pair of values. 
 
         #start with the i = 0 points.  This will be theta = 0, phi = 0...
         # we are starting with x and y, because the appraoch first generates the uniform sampling of a rectangle, and then converts this to a sphere. 
         # so we start in cartesian space...
-    
+
         #for speed, we are going to work with a list first, and then convert this to an array once we have the full length...
         x = [0]
         y = [0]
@@ -402,17 +415,17 @@ def _(n_mesh_points, np):
 
         x.append(1)
         y.append(0)
-    
+
         #then we convert to an array to make math easy... 
         x = np.array(x)
         y = np.array(y)
-    
+
         y = y % 1  #we want to convert to the unit square, and we do this by using the modulo operator
-    
+
         # then we want to convert the unit square to equally spaced polar coordinates. 
         thetas = np.arccos(2*x-1)
         phis = 2*np.pi*y
-    
+
         #convert the array back to list, so that sorting through it is easier...
         thetas = np.array(thetas).tolist()
         phis = np.array(phis).tolist()
@@ -425,7 +438,7 @@ def _(n_mesh_points, np):
         # the above gives a uniform sampling of a sphere, but we really only need 1/8 of a sphere. We need theta 0 -> pi/2 and phi 0 -> pi/2  Thus, the simulation will be 8x faster!  So, let us trim this...
 
         #below is one way to do this.  There is CERTAINLY a more elegant way to do this...
-    
+
         #first, collect the thetas that are correct...
         # we are going to step through the theta vector, and pull out all thetas with the right value, as well as their paired value in phi..
         tp = 0
@@ -436,8 +449,8 @@ def _(n_mesh_points, np):
                 temp_thetas1.append(thetas[tp])
                 temp_phis1.append(phis[tp])
             tp += 1  #advance the counter
-      
-    
+
+
         #then, collect the phis that are correct...
         tp = 0
         temp_thetas2 = []
@@ -447,12 +460,12 @@ def _(n_mesh_points, np):
                 temp_thetas2.append(temp_thetas1[tp])
                 temp_phis2.append(temp_phis1[tp])
             tp += 1  #advance the counter
-    
-    
+
+
 
         thetas = temp_thetas2
         phis = temp_phis2
-    
+
         #lets keep the output as lists for right now.  I think that is good for speeding up the latter portions...
         # we can always convert them to arrays later, if we want. 
         return [thetas, phis]
@@ -479,79 +492,44 @@ def _(np):
         particle_volume = 4/3*np.pi*particle_radius**3
         shell_volume    = particle_volume-(particle_radius - 2*atom_radius)**3
         atom_volume     = 4/3*np.pi*atom_radius**3
-    
-    
+
+
         #return mu_0 - mu_volume/(particle_volume/atom_volume)**3 + mu_surface*fractional_coverage * (shell_volume/atom_volume)/(particle_volume/atom_volume) 
         return mu_0 + mu_volume*(atom_radius/particle_radius)**3 + mu_surface*fractional_coverage * (particle_radius**3 - (particle_radius-2*atom_radius)**3)/(particle_radius**3) 
 
     # relaxation
     def get_linewidth_from_size(size, w_0, w_matrix, offset):
-    
+
         return w_0 + w_matrix/(size-offset)**2
     return get_linewidth_from_size, get_resonance_position_from_size
 
 
 @app.cell
 def _(mo):
-    mo.md(r"""# Fitting models""")
+    mo.md(
+        r"""
+    # Fitting models
+
+    Below are the models that can be used to fit data...
+    """
+    )
     return
 
 
 @app.cell
 def _(
-    Path,
-    get_lineshape_points,
-    import_epr_data,
-    import_sizes,
-    qp,
-    trim_data,
-):
-    # import the data we will be using
-    epr_file = Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv")
-
-    size_file = Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide SIZES.csv")
-
-
-    exp_data, instrument_frequency = import_epr_data(epr_file)
-
-    sizes = import_sizes(size_file)
-
-    exp_plot = qp.quickScatter(x = exp_data[0], y = exp_data[1])
-
-
-    trimmed_exp_data = trim_data(exp_data[0], exp_data[1], [285, 407])
-    trimmed_exp_plot = qp.quickScatter(x = trimmed_exp_data[0], y = trimmed_exp_data[1], output = None)
-    exp_lineshape_indicies = get_lineshape_points(trimmed_exp_data)
-
-    for i in exp_lineshape_indicies:
-        trimmed_exp_plot.add_scatter(x = [trimmed_exp_data[0][i], trimmed_exp_data[0][i]], y = [trimmed_exp_data[1][exp_lineshape_indicies[0]], trimmed_exp_data[1][exp_lineshape_indicies[-1]]], mode = "lines")
-
-    trimmed_exp_plot.update_layout(title = f"instrument frequency = {instrument_frequency} Hz")
-    trimmed_exp_plot.update_traces(showlegend = False)
-    trimmed_exp_plot.show()
-    return (
-        exp_lineshape_indicies,
-        instrument_frequency,
-        sizes,
-        trimmed_exp_data,
-    )
-
-
-@app.function
-def linear_background(x, a, b):
-    return a + b*x
-
-
-@app.cell
-def _(
     Model,
-    double_integral,
-    exp_lineshape_indicies,
+    get_linewidth_from_size,
+    get_resonance_position_from_size,
+    get_values_from_orientation,
+    hilbert_transform,
     lorentzian,
     np,
-    plot_fit,
-    trimmed_exp_data,
+    voigt,
 ):
+    def linear_background(x, a, b):
+        return a + b*x
+
     # Model1: Lorentzian 
     def lorentzian_epr(x, I, mu, gamma, a, b):
         absorbance = lorentzian(x, I, mu, gamma) 
@@ -559,33 +537,8 @@ def _(
 
         return epr + linear_background(x, a, b)
 
-    Model1 = Model(lorentzian_epr)
-    Model1_params = Model1.make_params()
-    Model1_params.add_many(
-        ("I", double_integral(trimmed_exp_data[0], trimmed_exp_data[1]-np.mean(trimmed_exp_data[1]))[1][-1], True, 0, None),
-        ("mu", trimmed_exp_data[0][exp_lineshape_indicies[1]], True, 0, None),
-        ("gamma", abs(trimmed_exp_data[0][exp_lineshape_indicies[0]] - trimmed_exp_data[0][exp_lineshape_indicies[-1]]), True, 0, None),
-        ("a", np.mean(trimmed_exp_data[1]) , True, None, None),
-        ("b", 0, True, None, None),
-    )
+    Lorentzian_model = Model(lorentzian_epr)
 
-    Model1_result = Model1.fit(trimmed_exp_data[1], params = Model1_params, x = trimmed_exp_data[0])
-
-    print(Model1_result.fit_report())
-
-    plot_fit(Model1_result)
-
-    return (Model1_result,)
-
-
-@app.cell
-def _(Model1_result):
-    Model1_result.params["I"].value
-    return
-
-
-@app.cell
-def _(Model, Model1_result, np, plot_fit, trimmed_exp_data, voigt):
     # Model 2: Voight
     def voigt_epr(x, I, mu, sigma, gamma, a, b):
         absorbance = voigt(x, I, mu, sigma, gamma) 
@@ -593,34 +546,8 @@ def _(Model, Model1_result, np, plot_fit, trimmed_exp_data, voigt):
 
         return epr + linear_background(x, a, b)
 
-    Model2 = Model(voigt_epr)
-    Model2_params = Model2.make_params()
-    Model2_params.add_many(
-        ("I",     Model1_result.params["I"].value, True, 0, None),
-        ("mu",    Model1_result.params["mu"].value, True, 0, None),
-        ("sigma", Model1_result.params["gamma"].value, True, 0, None),
-        ("gamma", Model1_result.params["gamma"].value, True, 0, None),
-        ("a",     Model1_result.params["a"].value , True, None, None),
-        ("b",     Model1_result.params["b"].value, True, None, None),
-    )
+    Voigt_model = Model(voigt_epr)
 
-    Model2_result = Model2.fit(trimmed_exp_data[1], params = Model2_params, x = trimmed_exp_data[0])
-    print(Model2_result.aic)
-    print(Model2_result.fit_report())
-    plot_fit(Model2_result)
-    return Model2_params, Model2_result
-
-
-@app.cell
-def _(
-    Model,
-    Model1_result,
-    hilbert_transform,
-    lorentzian,
-    np,
-    plot_fit,
-    trimmed_exp_data,
-):
     # Model 3: Lorentzian + dispersion
     def lorentzian_dispersion_epr(x, I, D, mu, gamma, a, b):
         # 1. Calculate the dynamic absorption component based on current parameters
@@ -640,36 +567,8 @@ def _(
         # 5. Add the linear background
         return epr + linear_background(x, a, b)
 
-    Model3 = Model(lorentzian_dispersion_epr)
-    Model3_params = Model3.make_params()
-    Model3_params.add_many(
-        ("I",     Model1_result.params["I"].value, True, 0, None),
-        ("D",     0.5, True, 0, 1),
-        ("mu",    Model1_result.params["mu"].value, True, 0, None),
-        ("gamma", Model1_result.params["gamma"].value, True, 0, None),
-        ("a",     Model1_result.params["a"].value, True, None, None),
-        ("b",     Model1_result.params["b"].value, True, None, None),
-    )
+    Lorentzian_dispersion_model = Model(lorentzian_dispersion_epr)
 
-    Model3_result = Model3.fit(trimmed_exp_data[1], params = Model3_params, x = trimmed_exp_data[0])
-
-    print(Model3_result.aic)
-    print(Model3_result.fit_report())
-    plot_fit(Model3_result)
-    return (Model3_result,)
-
-
-@app.cell
-def _(
-    Model,
-    Model2_result,
-    Model3_result,
-    hilbert_transform,
-    np,
-    plot_fit,
-    trimmed_exp_data,
-    voigt,
-):
     # Model 4: Voight + dispersion
     def voigt_dispersion_epr(x, I, D, mu, sigma, gamma, a, b):
         # 1. Calculate the dynamic absorption component based on current parameters
@@ -689,7 +588,392 @@ def _(
         # 5. Add the linear background
         return epr + linear_background(x, a, b)
 
-    Model4 = Model(voigt_dispersion_epr)
+    Voigt_dispersion_model = Model(voigt_dispersion_epr)
+
+
+    # Model 5: Powder Lorentzian
+    def lorentzian_powder_epr(x, I, Bx, By, Bz, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
+
+        summed_absorptions = np.zeros_like(x)
+
+        # first, get the vectors of the g-value, and gamma
+        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
+        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
+
+        # then get the mean position in B-field
+        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
+
+        for B, g in zip(B_resonances, gammas):
+            summed_absorptions = summed_absorptions+lorentzian(x, 1, B, g)
+
+        epr = np.gradient(I*summed_absorptions, x)
+
+        return epr+linear_background(x, a, b)
+
+    Lorentzian_powder_model = Model(lorentzian_powder_epr, independent_vars = ["x", "thetas_phis"])
+
+
+    # Model 6: Powder Voight
+    def voigt_powder_epr(x, I, Bx, By, Bz, sigma_x, sigma_y, sigma_z, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
+
+        summed_absorptions = np.zeros_like(x)
+
+        # first, get the vectors of the g-value, and gamma
+        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
+        sigmas = get_values_from_orientation(sigma_x, sigma_y, sigma_z, thetas_phis)
+        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
+
+        # then get the mean position in B-field
+        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
+
+        for B, s, g in zip(B_resonances, sigmas, gammas):
+            summed_absorptions = summed_absorptions+voigt(x, 1, B, s, g)
+
+        epr = np.gradient(I*summed_absorptions, x)
+
+        return epr+linear_background(x, a, b)
+
+    Voigt_powder_model = Model(voigt_powder_epr, independent_vars = ["x", "thetas_phis"])
+
+
+    #Model 7
+    def lorentzian_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, a, b):
+        summed_epr = np.zeros_like(x)
+        for s in sizes:
+            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14) # divide size by 2 to get the radius
+            gamma = get_linewidth_from_size(s/2, gamma_0, gamma_volume, gamma_offset)
+            absorbance = lorentzian(x, 1, mu, gamma) 
+            summed_epr = summed_epr + absorbance
+
+        epr = np.gradient(I*summed_epr, x)
+
+        return epr + linear_background(x, a, b)
+
+    Lorentzian_size_epr = Model(lorentzian_sizes_epr, independent_vars=['x', 'sizes'])
+
+
+    # Model 8: Voight size effects
+    def voight_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, sigma_0, sigma_volume, sigma_surface, a, b):
+        summed_epr = np.zeros_like(x)
+        for s in sizes:
+            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14)
+            gamma = get_linewidth_from_size(s/2, gamma_0, gamma_volume, gamma_offset)
+            sigma = get_resonance_position_from_size(s/2, sigma_0, sigma_volume, sigma_surface, atom_radius = 0.14)
+            absorbance = voigt(x, 1, mu, sigma, gamma) 
+            summed_epr = summed_epr + absorbance
+
+        epr = np.gradient(I*summed_epr, x)
+
+        return epr + linear_background(x, a, b)
+
+    Voigt_size_model = Model(voight_sizes_epr, independent_vars=['x', 'sizes'])
+
+
+    # Model 9: Size dependent dysonian
+    # ? Maybe only a single value for sigma? Like the degree of heterogenous broadening will be the same for everything?
+    def lorentzian_dispersion_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, D_0, D_volume, D_surface, a, b):
+        summed_epr = np.zeros_like(x)
+        for s in sizes:
+            mu = get_resonance_position_from_size(s, mu_0, mu_volume, mu_surface, offset = 0.28)
+            gamma = get_linewidth_from_size(s, gamma_0, gamma_volume, gamma_offset)
+            D = get_resonance_position_from_size(s, D_0, D_volume, D_surface)
+            absorption = lorentzian(x, 1, mu, gamma) 
+            dispersion, _ = hilbert_transform(x, absorption) 
+
+            # 3. Now mix the two components, which are a physically linked pair
+            sum_signal = (1 - D) * absorption + D * dispersion
+            summed_epr = summed_epr + sum_signal
+
+        epr = np.gradient(I*summed_epr, x)
+
+        return epr + linear_background(x, a, b)
+
+    Lorentian_size_dispersion_model = Model(lorentzian_dispersion_sizes_epr, independent_vars=['x', 'sizes'])
+
+
+    # Model 10: Size dependent voigt
+    # ? Maybe only a single value for sigma? Like the degree of heterogenous broadening will be the same for everything?
+    def voigt_dispersion_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, sigma, gamma_0, gamma_volume, gamma_offset, D_0, D_volume, D_surface, a, b):
+        summed_epr = np.zeros_like(x)
+        for s in sizes:
+            mu = get_resonance_position_from_size(s, mu_0, mu_volume, mu_surface)
+            gamma = get_linewidth_from_size(s, gamma_0, gamma_volume, gamma_offset)
+            D = get_resonance_position_from_size(s, D_0, D_volume, D_surface)
+            absorption = voigt(x, 1, mu, sigma, gamma) 
+            dispersion, _ = hilbert_transform(x, absorption) 
+
+            # 3. Now mix the two components, which are a physically linked pair
+            sum_signal = (1 - D) * absorption + D * dispersion
+            summed_epr = summed_epr + sum_signal
+
+        epr = np.gradient(I*summed_epr, x)
+
+        return epr + linear_background(x, a, b)
+
+    Voigt_size_dispersion_model = Model(voigt_dispersion_sizes_epr, independent_vars=['x', 'sizes'])
+    return Voigt_model, Voigt_powder_model, Voigt_size_model
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""# Now, usage of these functions""")
+    return
+
+
+@app.cell
+def _(
+    Path,
+    Voigt_model,
+    Voigt_powder_model,
+    Voigt_size_model,
+    double_integral,
+    get_lineshape_points,
+    import_epr_data,
+    import_sizes,
+    np,
+    plot_fit,
+    thetas_phis,
+    trim_data,
+):
+    # This is a function to fit spectra to both a size-depndent and powder pattern
+
+    def compare_size_and_powder_models(epr_file, size_file):
+        return
+
+
+
+    # use pairs of epr and size data
+    file_pairs = [
+        [
+            Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv"),
+            Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide SIZES.csv")
+        ],
+    ]
+
+
+    epr_file, size_file = file_pairs[0]
+    print(f"starting procesing of {epr_file}")
+
+    # first, get the epr data and parameters to help estiamte fitting.
+    exp_data, instrument_frequency = import_epr_data(epr_file)    
+
+    trimmed_exp_data = trim_data(exp_data[0], exp_data[1], [285, 407])
+
+    exp_lineshape_indicies = get_lineshape_points(trimmed_exp_data)
+
+    # then get the size data
+    sizes = import_sizes(size_file)
+
+    print(f"data import for {epr_file} done")
+
+
+    # then, fit to a simple Voight, so we have estimates of the Lorentizian and Gaussian stuff
+    Voigt_params = Voigt_model.make_params()
+    Voigt_params.add_many(
+    ("I", double_integral(trimmed_exp_data[0], trimmed_exp_data[1]-np.mean(trimmed_exp_data[1]))[1][-1], True, 0, None),
+    ("mu", trimmed_exp_data[0][exp_lineshape_indicies[1]], True, 0, None),
+    ("gamma", abs(trimmed_exp_data[0][exp_lineshape_indicies[0]] - trimmed_exp_data[0][exp_lineshape_indicies[-1]]), True, 0, None),
+    ("sigma", abs(trimmed_exp_data[0][exp_lineshape_indicies[0]] - trimmed_exp_data[0][exp_lineshape_indicies[-1]]), True, 0, None),
+    ("a", np.mean(trimmed_exp_data[1]) , True, None, None),
+    ("b", 0, True, None, None),
+    )
+
+    print(f"starting the Voigt fit")
+    Voigt_result = Voigt_model.fit(trimmed_exp_data[1], params = Voigt_params, x = trimmed_exp_data[0])
+
+
+    # then fit a size dependence model
+    Voigt_size_params = Voigt_size_model.make_params()
+    Voigt_size_params.add_many(
+        ("I",            Voigt_result.params["I"].value/len(sizes), True, 0, None),
+        ("mu_0",         trimmed_exp_data[0][exp_lineshape_indicies[2]], True, 0, None), # start at one end of the feature
+        ("mu_volume",    0, True, None, None),
+        ("mu_surface",   0, True, None, None),
+        ("sigma_0",      Voigt_result.params["sigma"].value/len(sizes)**0.5, False, 0, None),
+        ("sigma_volume",  0 , False, None, None),
+        ("sigma_surface", 0 , False, None, None),
+        ("gamma_0",       Voigt_result.params["gamma"].value/len(sizes)**0.5, True, 0, None),
+        ("gamma_volume",  0, False, None, None),
+        ("gamma_offset",  0, False, 0, None),
+        ("a",             Voigt_result.params["a"].value, True, None, None),
+        ("b",             Voigt_result.params["b"].value, True, None, None),
+    )
+
+    print(f"starting the first Voigt_size fit")
+    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params, x = trimmed_exp_data[0], sizes = sizes)
+
+
+    ### IF YOU WANT TO SPEEDTHINGS UP. COMMENT OUT FROM HERE TO THE OTHER COMMENT
+    Voigt_size_params2 = Voigt_size_model.make_params()
+    Voigt_size_params2.add_many(
+        ("I",            Voigt_size_result.params["I"].value, True, 0, None),
+        ("mu_0",         Voigt_size_result.params["mu_0"].value, True, 0, None), # start at one end of the feature
+        ("mu_volume",    Voigt_size_result.params["mu_volume"].value, True, None, None),
+        ("mu_surface",   Voigt_size_result.params["mu_surface"].value, True, None, None),
+        ("sigma_0",      Voigt_size_result.params["sigma_0"].value, True, 0, None),
+        ("sigma_volume",  0 , False, None, None),
+        ("sigma_surface", 0 , False, None, None),
+        ("gamma_0",       Voigt_size_result.params["gamma_0"].value, True, 0, None),
+        ("gamma_volume",  0, False, None, None),
+        ("gamma_offset",  0, False, 0, None),
+        ("a",             Voigt_size_result.params["a"].value, True, None, None),
+        ("b",             Voigt_size_result.params["b"].value, True, None, None),
+    )
+
+    print(f"starting the second Voigt_size fit")
+    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params2, x = trimmed_exp_data[0], sizes = sizes)
+    ### COMMENT OUT TO HERE. 
+
+    # then fit a powder model
+    Voigt_powder_params = Voigt_powder_model.make_params()
+    Voigt_powder_params.add_many(
+        ("I",       Voigt_result.params["I"].value/len(thetas_phis), True, 0, None),
+        ("Bx",      trimmed_exp_data[0][exp_lineshape_indicies[0]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("By",      trimmed_exp_data[0][exp_lineshape_indicies[1]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("Bz",      trimmed_exp_data[0][exp_lineshape_indicies[2]],   True, trimmed_exp_data[0][0], trimmed_exp_data[0][-1]),
+        ("sigma_x", Voigt_result.params["sigma"].value/3,            True, 0, None),
+        ("sigma_y", Voigt_result.params["sigma"].value/3,            True, 0, None),
+        ("sigma_z", Voigt_result.params["sigma"].value/3,            True, 0, None),
+        ("gamma_x", Voigt_result.params["gamma"].value/3,            True, 0, None),
+        ("gamma_y", Voigt_result.params["gamma"].value/3,            True, 0, None),
+        ("gamma_z", Voigt_result.params["gamma"].value/3,            True, 0, None),
+        ("a",       Voigt_result.params["a"].value,                  True, None, None),
+        ("b",       Voigt_result.params["b"].value,                  True, None, None),
+        )
+
+    print(f"starting the Voigt_powder fit")
+    Voigt_powder_result = Voigt_powder_model.fit(trimmed_exp_data[1], params = Voigt_powder_params, x = trimmed_exp_data[0], thetas_phis = thetas_phis)
+
+
+    # then plot both results together
+    plot_fit([Voigt_size_result, Voigt_powder_result])
+
+    # then print out the fit results
+
+    print(f"fit reports for {epr_file}")
+    print(Voigt_size_result.fit_report())
+    print(Voigt_powder_result.fit_report())
+    print("") # just adding a line at the end
+
+
+    return (
+        exp_lineshape_indicies,
+        instrument_frequency,
+        sizes,
+        trimmed_exp_data,
+    )
+
+
+app._unparsable_cell(
+    r"""
+    # just commenting this out for right now.  So, I can run the cell above.
+    '''
+    # import the data we will be using
+    epr_file = Path(r\"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv\")
+
+    size_file = Path(r\"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide SIZES.csv\")
+
+
+    exp_data, instrument_frequency = import_epr_data(epr_file)
+
+    sizes = import_sizes(size_file)
+
+    exp_plot = qp.quickScatter(x = exp_data[0], y = exp_data[1])
+
+
+    trimmed_exp_data = trim_data(exp_data[0], exp_data[1], [285, 407])
+    trimmed_exp_plot = qp.quickScatter(x = trimmed_exp_data[0], y = trimmed_exp_data[1], output = None)
+    exp_lineshape_indicies = get_lineshape_points(trimmed_exp_data)
+
+    for i in exp_lineshape_indicies:
+        trimmed_exp_plot.add_scatter(x = [trimmed_exp_data[0][i], trimmed_exp_data[0][i]], y = [trimmed_exp_data[1][exp_lineshape_indicies[0]], trimmed_exp_data[1][exp_lineshape_indicies[-1]]], mode = \"lines\")
+
+    trimmed_exp_plot.update_layout(title = f\"instrument frequency = {instrument_frequency} Hz\")
+    trimmed_exp_plot.update_traces(showlegend = False)
+    trimmed_exp_plot.show()
+
+    '''
+    """,
+    name="_"
+)
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(
+    Lorentzian_params,
+    Model1,
+    Model1_params,
+    double_integral,
+    exp_lineshape_indicies,
+    np,
+    plot_fit,
+    trimmed_exp_data,
+):
+
+    Lorentzian_params.add_many(
+        ("I", double_integral(trimmed_exp_data[0], trimmed_exp_data[1]-np.mean(trimmed_exp_data[1]))[1][-1], True, 0, None),
+        ("mu", trimmed_exp_data[0][exp_lineshape_indicies[1]], True, 0, None),
+        ("gamma", abs(trimmed_exp_data[0][exp_lineshape_indicies[0]] - trimmed_exp_data[0][exp_lineshape_indicies[-1]]), True, 0, None),
+        ("a", np.mean(trimmed_exp_data[1]) , True, None, None),
+        ("b", 0, True, None, None),
+    )
+
+    Model1_result = Model1.fit(trimmed_exp_data[1], params = Model1_params, x = trimmed_exp_data[0])
+
+    print(Model1_result.fit_report())
+
+    plot_fit(Model1_result)
+
+    return (Model1_result,)
+
+
+@app.cell
+def _(Model1_result, Model2, Model2_params, plot_fit, trimmed_exp_data):
+
+    Model2_params.add_many(
+        ("I",     Model1_result.params["I"].value, True, 0, None),
+        ("mu",    Model1_result.params["mu"].value, True, 0, None),
+        ("sigma", Model1_result.params["gamma"].value, True, 0, None),
+        ("gamma", Model1_result.params["gamma"].value, True, 0, None),
+        ("a",     Model1_result.params["a"].value , True, None, None),
+        ("b",     Model1_result.params["b"].value, True, None, None),
+    )
+
+    Model2_result = Model2.fit(trimmed_exp_data[1], params = Model2_params, x = trimmed_exp_data[0])
+    print(Model2_result.aic)
+    print(Model2_result.fit_report())
+    plot_fit(Model2_result)
+    return (Model2_result,)
+
+
+@app.cell
+def _(Model1_result, Model3, Model3_params, plot_fit, trimmed_exp_data):
+
+    Model3_params.add_many(
+        ("I",     Model1_result.params["I"].value, True, 0, None),
+        ("D",     0.5, True, 0, 1),
+        ("mu",    Model1_result.params["mu"].value, True, 0, None),
+        ("gamma", Model1_result.params["gamma"].value, True, 0, None),
+        ("a",     Model1_result.params["a"].value, True, None, None),
+        ("b",     Model1_result.params["b"].value, True, None, None),
+    )
+
+    Model3_result = Model3.fit(trimmed_exp_data[1], params = Model3_params, x = trimmed_exp_data[0])
+
+    print(Model3_result.aic)
+    print(Model3_result.fit_report())
+    plot_fit(Model3_result)
+    return (Model3_result,)
+
+
+@app.cell
+def _(Model2_result, Model3_result, Model4, plot_fit, trimmed_exp_data):
+
     Model4_params = Model4.make_params()
     Model4_params.add_many(
         ("I",     Model3_result.params["I"].value, True, 0, None),
@@ -712,36 +996,14 @@ def _(
 
 @app.cell
 def _(
-    Model,
     Model1_result,
+    Model5,
     exp_lineshape_indicies,
-    get_values_from_orientation,
-    lorentzian,
-    np,
     plot_fit,
     thetas_phis,
     trimmed_exp_data,
 ):
-    # Model 5: Powder Lorentzian
-    def lorentzian_powder_epr(x, I, Bx, By, Bz, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
 
-        summed_absorptions = np.zeros_like(x)
-    
-        # first, get the vectors of the g-value, and gamma
-        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
-        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
-
-        # then get the mean position in B-field
-        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
-
-        for B, g in zip(B_resonances, gammas):
-            summed_absorptions = summed_absorptions+lorentzian(x, 1, B, g)
-
-        epr = np.gradient(I*summed_absorptions, x)
-
-        return epr+linear_background(x, a, b)
-
-    Model5 = Model(lorentzian_powder_epr, independent_vars = ["x", "thetas_phis"])
     Model5_params = Model5.make_params()
     Model5_params.add_many(
         ("I",       Model1_result.params["I"].value/len(thetas_phis), True, 0, None),
@@ -765,39 +1027,15 @@ def _(
 
 @app.cell
 def _(
-    Model,
     Model1_result,
     Model2_result,
+    Model6,
     exp_lineshape_indicies,
-    get_values_from_orientation,
-    np,
     plot_fit,
     thetas_phis,
     trimmed_exp_data,
-    voigt,
 ):
-    # Model 6: Powder Voight
 
-    def voigt_powder_epr(x, I, Bx, By, Bz, sigma_x, sigma_y, sigma_z, gamma_x, gamma_y, gamma_z, a, b, thetas_phis):
-
-        summed_absorptions = np.zeros_like(x)
-    
-        # first, get the vectors of the g-value, and gamma
-        B_resonances = get_values_from_orientation(Bx, By, Bz, thetas_phis)
-        sigmas = get_values_from_orientation(sigma_x, sigma_y, sigma_z, thetas_phis)
-        gammas = get_values_from_orientation(gamma_x, gamma_y, gamma_z, thetas_phis)
-
-        # then get the mean position in B-field
-        #B_resonances = 1000* h*instrument_frequency / (gs * u_B) # get resonance position in terms of mT
-
-        for B, s, g in zip(B_resonances, sigmas, gammas):
-            summed_absorptions = summed_absorptions+voigt(x, 1, B, s, g)
-
-        epr = np.gradient(I*summed_absorptions, x)
-
-        return epr+linear_background(x, a, b)
-
-    Model6 = Model(voigt_powder_epr, independent_vars = ["x", "thetas_phis"])
     Model6_params = Model6.make_params()
     Model6_params.add_many(
         ("I",       Model1_result.params["I"].value/len(thetas_phis), True, 0, None),
@@ -837,34 +1075,18 @@ def _(Model6_result, h, instrument_frequency, u_B):
 
 @app.cell
 def _(
-    Model,
     Model1_result,
+    Model7,
     g_metal,
-    get_linewidth_from_size,
-    get_resonance_position_from_size,
     h,
     instrument_frequency,
-    lorentzian,
-    np,
     plot_fit,
     sizes,
     trimmed_exp_data,
     u_B,
 ):
 
-    def lorentzian_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, a, b):
-        summed_epr = np.zeros_like(x)
-        for s in sizes:
-            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14) # divide size by 2 to get the radius
-            gamma = get_linewidth_from_size(s/2, gamma_0, gamma_volume, gamma_offset)
-            absorbance = lorentzian(x, 1, mu, gamma) 
-            summed_epr = summed_epr + absorbance
 
-        epr = np.gradient(I*summed_epr, x)
-
-        return epr + linear_background(x, a, b)
-
-    Model7 = Model(lorentzian_sizes_epr, independent_vars=['x', 'sizes'])
     Model7_params = Model7.make_params()
     Model7_params.add_many(
         ("I",            Model1_result.params["I"].value/len(sizes), True, 0, None),
@@ -915,34 +1137,8 @@ def _(Model7_result):
 
 
 @app.cell
-def _(
-    Model,
-    Model2_params,
-    Model7_result,
-    get_linewidth_from_size,
-    get_resonance_position_from_size,
-    np,
-    plot_fit,
-    sizes,
-    trimmed_exp_data,
-    voigt,
-):
-    # Model 8: Voight size effects
-    # ? Maybe only a single value for sigma? Like the degree of heterogenous broadening will be the same for everything?
-    def voight_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, sigma_0, sigma_volume, sigma_surface, a, b):
-        summed_epr = np.zeros_like(x)
-        for s in sizes:
-            mu = get_resonance_position_from_size(s/2, mu_0, mu_volume, mu_surface, atom_radius = 0.14)
-            gamma = get_linewidth_from_size(s/2, gamma_0, gamma_volume, gamma_offset)
-            sigma = get_resonance_position_from_size(s/2, sigma_0, sigma_volume, sigma_surface, atom_radius = 0.14)
-            absorbance = voigt(x, 1, mu, sigma, gamma) 
-            summed_epr = summed_epr + absorbance
+def _(Model2_params, Model7_result, Model8, plot_fit, sizes, trimmed_exp_data):
 
-        epr = np.gradient(I*summed_epr, x)
-
-        return epr + linear_background(x, a, b)
-
-    Model8 = Model(voight_sizes_epr, independent_vars=['x', 'sizes'])
     Model8_params = Model8.make_params()
     Model8_params.add_many(
         ("I",            Model7_result.params["I"].value, True, 0, None),
@@ -1008,38 +1204,8 @@ def _(
 
 
 @app.cell
-def _(
-    Model,
-    Model7_result,
-    get_linewidth_from_size,
-    get_resonance_position_from_size,
-    hilbert_transform,
-    lorentzian,
-    np,
-    plot_fit,
-    sizes,
-    trimmed_exp_data,
-):
-    # Model 9: Size dependent dysonian
-    # ? Maybe only a single value for sigma? Like the degree of heterogenous broadening will be the same for everything?
-    def lorentzian_dispersion_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, gamma_0, gamma_volume, gamma_offset, D_0, D_volume, D_surface, a, b):
-        summed_epr = np.zeros_like(x)
-        for s in sizes:
-            mu = get_resonance_position_from_size(s, mu_0, mu_volume, mu_surface, offset = 0.28)
-            gamma = get_linewidth_from_size(s, gamma_0, gamma_volume, gamma_offset)
-            D = get_resonance_position_from_size(s, D_0, D_volume, D_surface)
-            absorption = lorentzian(x, 1, mu, gamma) 
-            dispersion, _ = hilbert_transform(x, absorption) 
+def _(Model7_result, Model9, plot_fit, sizes, trimmed_exp_data):
 
-            # 3. Now mix the two components, which are a physically linked pair
-            sum_signal = (1 - D) * absorption + D * dispersion
-            summed_epr = summed_epr + sum_signal
-
-        epr = np.gradient(I*summed_epr, x)
-
-        return epr + linear_background(x, a, b)
-
-    Model9 = Model(lorentzian_dispersion_sizes_epr, independent_vars=['x', 'sizes'])
     Model9_params = Model9.make_params()
     Model9_params.add_many(
         ("I", Model7_result.params["I"].value, True, 0, None),
@@ -1066,38 +1232,14 @@ def _(
 
 @app.cell
 def _(
-    Model,
+    Model10,
     Model8_result,
     Model9_result,
-    get_linewidth_from_size,
-    get_resonance_position_from_size,
-    hilbert_transform,
-    np,
     plot_fit,
     sizes,
     trimmed_exp_data,
-    voigt,
 ):
-    # Model 9: Size dependent dysonian
-    # ? Maybe only a single value for sigma? Like the degree of heterogenous broadening will be the same for everything?
-    def voigt_dispersion_sizes_epr(x, sizes, I, mu_0, mu_volume, mu_surface, sigma, gamma_0, gamma_volume, gamma_offset, D_0, D_volume, D_surface, a, b):
-        summed_epr = np.zeros_like(x)
-        for s in sizes:
-            mu = get_resonance_position_from_size(s, mu_0, mu_volume, mu_surface)
-            gamma = get_linewidth_from_size(s, gamma_0, gamma_volume, gamma_offset)
-            D = get_resonance_position_from_size(s, D_0, D_volume, D_surface)
-            absorption = voigt(x, 1, mu, sigma, gamma) 
-            dispersion, _ = hilbert_transform(x, absorption) 
 
-            # 3. Now mix the two components, which are a physically linked pair
-            sum_signal = (1 - D) * absorption + D * dispersion
-            summed_epr = summed_epr + sum_signal
-
-        epr = np.gradient(I*summed_epr, x)
-
-        return epr + linear_background(x, a, b)
-
-    Model10 = Model(voigt_dispersion_sizes_epr, independent_vars=['x', 'sizes'])
     Model10_params = Model10.make_params()
     Model10_params.add_many(
         ("I", Model8_result.params["I"].value, True, 0, None),
@@ -1130,7 +1272,22 @@ def EPR_fitting_with_sizes(exp_x, exp_y, frequency, sizes):
     # then fit a single Voigt 
 
     # then fit a voigt with size effects but no gamma or sigma size dependence, dividing the gamma and sigma by the length of the sizes...
-    
+
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
     return
 
 

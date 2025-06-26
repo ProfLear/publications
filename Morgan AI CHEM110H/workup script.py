@@ -253,8 +253,8 @@ for i, option in enumerate(responses["CHEM 110H AI Pre-Course_Proccessed"][25]["
         if option == poption:
             post_use.append(responses["CHEM 110H_Post Course Survey_Proccessed"][25]["answers"]["counts"][j])
             post_index.append(j)
-use_fig.add_bar(x = pre_use, orientation = "h", showlegend = False, marker = dict(color = "#008888"),)
 use_fig.add_bar(x = post_use, orientation = "h", showlegend = False, marker = dict(color = "#f5653d"),)
+use_fig.add_bar(x = pre_use, orientation = "h", showlegend = False, marker = dict(color = "#008888"),)
 
 
 use_fig.update_xaxes(title = "counts")
