@@ -15,3 +15,12 @@
 [DEBUG] Received message: {"jsonrpc":"2.0","id":"2","method":"checkStatus","params":{}}
 [INFO] WebSocket closed with code 1000, reason: 
 [INFO] Client connection closed - Code: 1000, Reason: 
+[INFO] WebSocket closed with code 1000, reason: 
+[INFO] Client connection closed - Code: 1000, Reason: 
+[INFO] New connection from ::1
+[INFO] Matched language server: copilot
+[INFO] Created language server process: node C:\Users\benle\psu\Lib\site-packages\marimo\_lsp\copilot\language-server.js --stdio
+[INFO] Forwarding new client connection
+[DEBUG] Received message: {"jsonrpc":"2.0","id":"0","method":"initialize","params":{"capabilities":{"workspace":{"workspaceFolders":false}},"initializationOptions":{"editorInfo":{"name":"marimo","version":"0.1.0"},"editorPluginInfo":{"name":"marimo","version":"0.1.0"}},"processId":null,"rootUri":"file:///__marimo_copilot__.py","workspaceFolders":[]}}
+[DEBUG] Received message: {"jsonrpc":"2.0","method":"initialized","params":{}}
+[DEBUG] Received message: {"jsonrpc":"2.0","id":"2","method":"checkStatus","params":{}}

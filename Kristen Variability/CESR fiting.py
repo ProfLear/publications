@@ -93,16 +93,16 @@ def _(make_subplots):
                 abs(min(fit_result.best_fit)),
                 ])
 
-            plot.update_xaxes(title = "magnetic field /T", showline = False, row = 1, col = i+1)
+            plot.update_xaxes(title = "magnetic field /mT", showline = False, row = 1, col = i+1)
             plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True, row = 1, col = i+1)
 
-            plot.update_xaxes(title = "magnetic field /T", showline = False, row = 2, col = i+1)
+            plot.update_xaxes(title = "magnetic field /mT", showline = False, row = 2, col = i+1)
             plot.update_yaxes(title = "intensity", range = [-1.05*ymax, 1.05*ymax], zeroline = True, row = 2, col = i+1)
 
             plot.add_annotation(text = f"{fit_result.model.name}: AIC:{int(fit_result.aic)}",
                                showarrow = False,
-                               x = min(fit_result.userkws[independent_vars[0]]),
-                               y = ymax,
+                               x = min(fit_result.userkws[independent_vars[0]]), xanchor="left",
+                               y = ymax, yanchor = "bottom",
                                row = 1, col = i+1)
 
     
@@ -225,18 +225,17 @@ def _(cumulative_trapezoid, np):
 
     # import sizes
 
-    def import_sizes(file, col = 0, delimiter = None):
+    def import_sizes(file, col = 0, delimiter = ","):
         sizes = []
         with open(file, "r") as f:
             for row in f:
-                if delimiter:
+                if row.split(delimiter)[col][0].isdigit(): # found the sizes..
                     size_string = row.split(delimiter)[col]
-                else: # means there is only a single column
-                    size_string = row
-
-
-                if size_string[0].isdigit():
-                    sizes.append(float(size_string))
+                    sizes.append(float(size_string))                
+                else:
+                    for i, r in enumerate(row.split(delimiter)):
+                        if "size" in r.lower() or "feret" in r.lower(): # this means that we have found the column with our sizes
+                            col = i
 
         return sizes
 
@@ -745,8 +744,8 @@ def _(
     # use pairs of epr and size data
     file_pairs = [
         [
-            Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide.csv"),
-            Path(r"C:\Users\benle\Documents\GitHub\publications\Kristen Variability\20240325_125158009_240325_PdSC12tol_6K_0dB_wide SIZES.csv")
+            Path(r"C:\Users\benle\Downloads\20240620_100047285_240620_PdSC12tol_RD_6K_0dB.csv"),
+            Path(r"C:\Users\benle\Downloads\Red_ALL_TEM.csv")
         ],
     ]
 
@@ -780,13 +779,13 @@ def _(
 
     print(f"starting the Voigt fit")
     Voigt_result = Voigt_model.fit(trimmed_exp_data[1], params = Voigt_params, x = trimmed_exp_data[0])
+    plot_fit([Voigt_result])
 
-
-    # then fit a size dependence model
+    # then fit a size dependence model.  Start with just trying to get guesses for Gamma and intensity and mu, wihtout sigma and background
     Voigt_size_params = Voigt_size_model.make_params()
     Voigt_size_params.add_many(
         ("I",            Voigt_result.params["I"].value/len(sizes), True, 0, None),
-        ("mu_0",         trimmed_exp_data[0][exp_lineshape_indicies[2]], True, 0, None), # start at one end of the feature
+        ("mu_0",         Voigt_result.params["mu"].value, True, 0, None), # start at one end of the feature
         ("mu_volume",    0, True, None, None),
         ("mu_surface",   0, True, None, None),
         ("sigma_0",      Voigt_result.params["sigma"].value/len(sizes)**0.5, False, 0, None),
@@ -795,17 +794,63 @@ def _(
         ("gamma_0",       Voigt_result.params["gamma"].value/len(sizes)**0.5, True, 0, None),
         ("gamma_volume",  0, False, None, None),
         ("gamma_offset",  0, False, 0, None),
-        ("a",             Voigt_result.params["a"].value, True, None, None),
-        ("b",             Voigt_result.params["b"].value, True, None, None),
+        ("a",             Voigt_result.params["a"].value, False, None, None),
+        ("b",             Voigt_result.params["b"].value, False, None, None),
     )
 
-    print(f"starting the first Voigt_size fit")
+    print(f"starting the first Voigt_size fit. This one is designed to get initial guesses for I, mu_0, mu_volume, and mu_surface")
     Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params, x = trimmed_exp_data[0], sizes = sizes)
 
+    plot_fit([Voigt_size_result])
 
-    ### IF YOU WANT TO SPEEDTHINGS UP. COMMENT OUT FROM HERE TO THE OTHER COMMENT
+
+    # now, allow everything but sigma to fit, this allows us to get a better baseline. 
     Voigt_size_params2 = Voigt_size_model.make_params()
     Voigt_size_params2.add_many(
+        ("I",            Voigt_size_result.params["I"].value, True, 0, None),
+        ("mu_0",         Voigt_size_result.params["mu_0"].value, True, 0, None), # start at one end of the feature
+        ("mu_volume",    Voigt_size_result.params["mu_volume"].value, True, None, None),
+        ("mu_surface",   Voigt_size_result.params["mu_surface"].value, True, None, None),
+        ("sigma_0",      Voigt_size_result.params["sigma_0"].value, False, 0, None),
+        ("sigma_volume",  0 , False, None, None),
+        ("sigma_surface", 0 , False, None, None),
+        ("gamma_0",       Voigt_size_result.params["gamma_0"].value, True, 0, None),
+        ("gamma_volume",  0, False, None, None),
+        ("gamma_offset",  0, False, 0, None),
+        ("a",             Voigt_size_result.params["a"].value, True, None, None),
+        ("b",             Voigt_size_result.params["b"].value, True, None, None),
+    )
+
+    print(f"starting the second Voigt_size fit. This one works from the last fit to find a better baseline.")
+    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params2, x = trimmed_exp_data[0], sizes = sizes)
+
+    plot_fit([Voigt_size_result])
+
+    # now, let us vary sigma... but really we only allow both sigma and gamma to change Trying to get a guess at simga from this
+    Voigt_size_params3 = Voigt_size_model.make_params()
+    Voigt_size_params3.add_many(
+        ("I",            Voigt_size_result.params["I"].value, True, 0, None),
+        ("mu_0",         Voigt_size_result.params["mu_0"].value, False, 0, None), # start at one end of the feature
+        ("mu_volume",    Voigt_size_result.params["mu_volume"].value, False, None, None),
+        ("mu_surface",   Voigt_size_result.params["mu_surface"].value, False, None, None),
+        ("sigma_0",      Voigt_size_result.params["sigma_0"].value, True, 0, None),
+        ("sigma_volume",  0 , False, None, None),
+        ("sigma_surface", 0 , False, None, None),
+        ("gamma_0",       Voigt_size_result.params["gamma_0"].value, True, 0, None),
+        ("gamma_volume",  0, False, None, None),
+        ("gamma_offset",  0, False, 0, None),
+        ("a",             Voigt_size_result.params["a"].value, False, None, None),
+        ("b",             Voigt_size_result.params["b"].value, False, None, None),
+    )
+
+    print(f"starting the third Voigt_size fit. This one starts from teh last fit to ONLY refine the estimate of Gamma and Sigma.")
+    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params3, x = trimmed_exp_data[0], sizes = sizes)
+
+    plot_fit([Voigt_size_result])
+
+    # then try to get the final fit. 
+    Voigt_size_params4 = Voigt_size_model.make_params()
+    Voigt_size_params4.add_many(
         ("I",            Voigt_size_result.params["I"].value, True, 0, None),
         ("mu_0",         Voigt_size_result.params["mu_0"].value, True, 0, None), # start at one end of the feature
         ("mu_volume",    Voigt_size_result.params["mu_volume"].value, True, None, None),
@@ -820,8 +865,12 @@ def _(
         ("b",             Voigt_size_result.params["b"].value, True, None, None),
     )
 
-    print(f"starting the second Voigt_size fit")
-    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params2, x = trimmed_exp_data[0], sizes = sizes)
+    print(f"starting the Final Voigt_size fit. This one has all values fit. ")
+    Voigt_size_result = Voigt_size_model.fit(trimmed_exp_data[1], params = Voigt_size_params4, x = trimmed_exp_data[0], sizes = sizes)
+
+    plot_fit([Voigt_size_result])
+
+
     ### COMMENT OUT TO HERE. 
 
     # then fit a powder model
