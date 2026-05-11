@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.13.15"
+__generated_with = "0.20.4"
 app = marimo.App(width="medium")
 
 
@@ -50,8 +50,6 @@ def import_distances(Path, np):
     low_density = {}
     low_density["solvent distances"] = np.genfromtxt(Path(r".\MDSimulationResults\toluene_distances_low_density.csv"), delimiter  = ",")
     low_density["ligand distances"] = np.genfromtxt(Path(r".\MDSimulationResults\dodecanol_distances_low_density.csv"), delimiter = ",")
-
-
     return (high_density,)
 
 
@@ -69,11 +67,11 @@ def bin_distances(
     def bin_and_extend_distances(distances, bin_width, alpha, contribution_threshold=0.01):
 
         binned_distances = LKP.bin_ligand_and_solvent_together(distances[0], distances[1], bin_width = bin_width)
-    
+
         #print(alpha)
         extended_binned_data = LKP.extend_bins_based_on_wavefunction(binned_distances[0], binned_distances[1], binned_distances[2], alpha = alpha, fract_threshold = contribution_threshold)
 
-    
+
         return [extended_binned_data[0], extended_binned_data[1], extended_binned_data[2], extended_binned_data[3]]
 
     extended_binned_data = bin_and_extend_distances([high_density["ligand distances"],high_density["solvent distances"]], bin_width = bin_width_input.value, alpha = alpha_input.value, contribution_threshold = contribution_threshold_input.value)
@@ -100,7 +98,7 @@ def plot_distances_and_wavefunction(make_subplots, np):
                 showlegend = False,
                 row = 1, col = 1,
                 )
-    
+
             fig.add_bar( # binned distances, wieghted by psi-squared
                 x = binned_distances[0],
                 y = bd*np.exp(-2*alpha*binned_distances[0]), # do the weighting
@@ -155,7 +153,7 @@ def plot_distances_and_wavefunction(make_subplots, np):
             showarrow = False,
             row = 3, col = 1,
             )
-    
+
         fig.update_xaxes(
             title = "distance from surface / A",
             row = 1, col = 1,
@@ -204,6 +202,7 @@ def plot_distances_and_wavefunction(make_subplots, np):
             )
 
         return fig
+
     return (generate_binned_distance_plot,)
 
 
@@ -235,15 +234,15 @@ def _(LKP, experimental_spectra, make_subplots):
         alpha,
         mu,
         gamma,
-    
+
         I1,
         I2,
         I3, 
-    
+
         a1, 
         a2,
         a3,
-    
+
         binned_distances,
         ligand_H_fractions,
         solvent_H_fractions,
@@ -264,11 +263,11 @@ def _(LKP, experimental_spectra, make_subplots):
         Is = [I1, I2, I3]
         baselines = [a1, a2, a3]
 
-    
+
         # get stick spectra...
-    
+
         fig = make_subplots(rows =3, cols = 1)
-    
+
         for i in range(3):
             # plot experimental spectra
             fig.add_scatter(
@@ -279,27 +278,27 @@ def _(LKP, experimental_spectra, make_subplots):
                 showlegend = False,
                 row=i+1, col=1
             )
-        
+
             # add simulated spectra
             simulated_ys = LKP.simulate_pulse_signal(
                 experimental_spectra[experimental_keys[i]][0], #experimental xs
-        
+
                 binned_distances[0], # bin centers for the ligand
                 binned_distances[0], # bin centers for the solvent
-        
+
                 binned_distances[1], # binned ligand counts
                 binned_distances[3], # binned_solvent counts, 
-        
+
                 ligand_H_fractions[i], # to be supplied as not fit
                 solvent_H_fractions[i], # to be supplied as not fit
-        
+
                 alpha, # decay constant
                 A, # scalar value to adjust strength of coupling
-        
+
                 Is[i], # intensity of individual contributions
                 mu, # central position, without coupling
                 gamma, # width of the lorentzian peak
-        
+
                 baselines[i], # baseline correction
                 )
 
@@ -351,7 +350,7 @@ def _(LKP, experimental_spectra, make_subplots):
             margin = dict(t = 5, r = 5),
             width = 600, height=500,
             )
-    
+
         return fig
 
     return (plot_specra_and_simulation_from_binned_distances,)
@@ -429,8 +428,7 @@ def _(
     mo,
     mu_input,
 ):
-    mo.md(
-        f"""
+    mo.md(f"""
     Binning parameters:</br>
     {bin_width_input}</br>
     {contribution_threshold_input}</br>
@@ -450,8 +448,7 @@ def _(
     {a_H25_H8_input}
     {a_D25_H8_input}
     {a_H25_D8_input}
-    """
-    )
+    """)
     return
 
 
@@ -480,25 +477,42 @@ def _(
 ):
     plot_specra_and_simulation_from_binned_distances(
         experimental_spectra, 
-    
+
         A_input.value,
         alpha_input.value,
-    
+
         mu_input.value,
         gamma_input.value, 
-    
+
         I_H25_H8_input.value,
         I_D25_H8_input.value,
         I_H25_D8_input.value, 
-    
+
         a_H25_H8_input.value, 
         a_D25_H8_input.value,
         a_H25_D8_input.value,
-    
+
         extended_binned_data,
         ligand_H_fractions,
         solvent_H_fractions,
         )
+    return
+
+
+@app.cell
+def _(make_subplots, np):
+    def pulsed_efficiency(x, tau, mu):
+        return 0.5*np.sin(x/2*tau + mu)**2
+
+    testx = np.linspace(-1*np.pi, 1*np.pi, 1000)
+    test = make_subplots()
+    test.add_scatter(x = testx, y = pulsed_efficiency(testx, 3, 0))
+    test
+    return
+
+
+@app.cell
+def _():
     return
 
 

@@ -1,0 +1,13 @@
+[project]
+name = "kristenpulse"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "codechembook>=1.3.0",
+    "lmfit>=1.3.4",
+    "marimo>=0.20.4",
+    "numpy>=2.4.2",
+    "plotly>=6.6.0",
+]
