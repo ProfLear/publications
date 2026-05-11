@@ -1,0 +1,60 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.21.1",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "73a0a84cfdaf8a5acd2f2c6b2b04f41a",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "ef581df7a3271315f3369f93d93570d8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Error: Image file not found.\nError: Image file not found.\nError: Image file not found.\nError: Image file not found.\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "/Users/benjaminlear/GitHub/publications/JackieSharkSkin/.venv/lib/python3.14/site-packages/numpy/_core/fromnumeric.py:3824: RuntimeWarning: Mean of empty slice\n  return _methods._mean(a, axis=axis, dtype=dtype,\n/Users/benjaminlear/GitHub/publications/JackieSharkSkin/.venv/lib/python3.14/site-packages/numpy/_core/_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide\n  ret = ret.dtype.type(ret / rcount)\n/Users/benjaminlear/GitHub/publications/JackieSharkSkin/.venv/lib/python3.14/site-packages/numpy/_core/_methods.py:219: RuntimeWarning: Degrees of freedom <= 0 for slice\n  ret = _var(a, axis=axis, dtype=dtype, out=out, ddof=ddof,\n/Users/benjaminlear/GitHub/publications/JackieSharkSkin/.venv/lib/python3.14/site-packages/numpy/_core/_methods.py:178: RuntimeWarning: invalid value encountered in divide\n  arrmean = um.true_divide(arrmean, div, out=arrmean,\n/Users/benjaminlear/GitHub/publications/JackieSharkSkin/.venv/lib/python3.14/site-packages/numpy/_core/_methods.py:211: RuntimeWarning: invalid value encountered in scalar divide\n  ret = ret.dtype.type(ret / rcount)\n",
+          "mimetype": "text/plain"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "average = nan, stderr = nan\nError: Image file not found.\nError: Image file not found.\nError: Image file not found.\nError: Image file not found.\naverage = nan, stderr = nan\nError: Image file not found.\nError: Image file not found.\nError: Image file not found.\nError: Image file not found.\naverage = nan, stderr = nan\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "vblA",
+      "code_hash": null,
+      "outputs": [],
+      "console": []
+    }
+  ]
+}

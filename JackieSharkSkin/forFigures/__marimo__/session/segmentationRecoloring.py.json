@@ -1,0 +1,88 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.20.4",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "4e3c9da527b7cdff0697ffac6365c844",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "16c028fdef9f45806fb5bac93a8ba253",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "007b76823de71921a32f65b8bdcaa9c1",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "9d6adc9c34348d56cf6cf47fbe5d28df",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Success! Image saved to C.\nSuccess! Image saved to C.\nSuccess! Image saved to C.\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "b9473f054d7df3adae7d1d2275c58026",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "application/json": "[\"../foulingImages/large/week12/large_12d_segmented.JPG\"]"
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "../foulingImages/flat/week0/flat_0a_segmented.JPG not found!\n../foulingImages/flat/week0/flat_0b_segmented.JPG not found!\n../foulingImages/flat/week0/flat_0c_segmented.JPG not found!\n../foulingImages/flat/week0/flat_0d_segmented.JPG not found!\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\nSuccess! Image saved to segmented_flat\n../foulingImages/small/week0/small_0a_segmented.JPG not found!\n../foulingImages/small/week0/small_0b_segmented.JPG not found!\n../foulingImages/small/week0/small_0c_segmented.JPG not found!\n../foulingImages/small/week0/small_0d_segmented.JPG not found!\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\nSuccess! Image saved to segmented_small\n../foulingImages/large/week0/large_0a_segmented.JPG not found!\n../foulingImages/large/week0/large_0b_segmented.JPG not found!\n../foulingImages/large/week0/large_0c_segmented.JPG not found!\n../foulingImages/large/week0/large_0d_segmented.JPG not found!\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\nSuccess! Image saved to segmented_large\n",
+          "mimetype": "text/plain"
+        }
+      ]
+    }
+  ]
+}

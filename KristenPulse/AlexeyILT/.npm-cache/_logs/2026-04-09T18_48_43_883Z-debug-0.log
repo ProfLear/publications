@@ -1,0 +1,327 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.9.0
+2 info using node@v24.14.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/benjaminlear/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm install @google/gemini-cli@0.37.0
+7 verbose argv "install" "--global" "@google/gemini-cli@0.37.0"
+8 verbose logfile logs-max:10 dir:/Users/benjaminlear/GitHub/publications/KristenPulse/AlexeyILT/.npm-cache/_logs/2026-04-09T18_48_43_883Z-
+9 verbose logfile /Users/benjaminlear/GitHub/publications/KristenPulse/AlexeyILT/.npm-cache/_logs/2026-04-09T18_48_43_883Z-debug-0.log
+10 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+11 silly logfile done cleaning log files
+12 silly idealTree buildDeps
+13 silly fetch manifest @google/gemini-cli@0.37.0
+14 silly packumentCache full:https://registry.npmjs.org/@google%2fgemini-cli cache-miss
+15 http fetch GET 200 https://registry.npmjs.org/@google%2fgemini-cli 203ms (cache miss)
+16 silly packumentCache full:https://registry.npmjs.org/@google%2fgemini-cli set size:undefined disposed:false
+17 silly placeDep ROOT @google/gemini-cli@0.37.0 OK for:  want: 0.37.0
+18 silly fetch manifest keytar@^7.9.0
+19 silly packumentCache full:https://registry.npmjs.org/keytar cache-miss
+20 silly fetch manifest node-pty@^1.0.0
+21 silly packumentCache full:https://registry.npmjs.org/node-pty cache-miss
+22 silly fetch manifest @lydell/node-pty@1.1.0
+23 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty cache-miss
+24 silly fetch manifest @lydell/node-pty-linux-x64@1.1.0
+25 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 cache-miss
+26 silly fetch manifest @lydell/node-pty-win32-x64@1.1.0
+27 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 cache-miss
+28 silly fetch manifest @lydell/node-pty-darwin-x64@1.1.0
+29 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 cache-miss
+30 silly fetch manifest @lydell/node-pty-win32-arm64@1.1.0
+31 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 cache-miss
+32 silly fetch manifest @lydell/node-pty-darwin-arm64@1.1.0
+33 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 cache-miss
+34 http fetch GET 200 https://registry.npmjs.org/npm 230ms
+35 http fetch GET 200 https://registry.npmjs.org/keytar 55ms (cache miss)
+36 silly packumentCache full:https://registry.npmjs.org/keytar set size:undefined disposed:false
+37 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty 150ms (cache miss)
+38 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty set size:undefined disposed:false
+39 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 158ms (cache miss)
+40 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 set size:undefined disposed:false
+41 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 162ms (cache miss)
+42 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 set size:undefined disposed:false
+43 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 164ms (cache miss)
+44 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 set size:undefined disposed:false
+45 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 173ms (cache miss)
+46 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 set size:undefined disposed:false
+47 http fetch GET 200 https://registry.npmjs.org/node-pty 185ms (cache miss)
+48 silly packumentCache full:https://registry.npmjs.org/node-pty set size:undefined disposed:false
+49 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 211ms (cache miss)
+50 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 set size:undefined disposed:false
+51 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+52 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-darwin-arm64@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+53 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-darwin-x64@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+54 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-linux-x64@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+55 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-win32-arm64@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+56 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-win32-x64@1.1.0 OK for: @google/gemini-cli@0.37.0 want: 1.1.0
+57 silly placeDep node_modules/@google/gemini-cli keytar@7.9.0 OK for: @google/gemini-cli@0.37.0 want: ^7.9.0
+58 silly placeDep node_modules/@google/gemini-cli node-pty@1.1.0 OK for: @google/gemini-cli@0.37.0 want: ^1.0.0
+59 silly fetch manifest @lydell/node-pty-linux-arm64@1.1.0
+60 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 cache-miss
+61 silly fetch manifest node-addon-api@^4.3.0
+62 silly packumentCache full:https://registry.npmjs.org/node-addon-api cache-miss
+63 silly fetch manifest prebuild-install@^7.0.1
+64 silly packumentCache full:https://registry.npmjs.org/prebuild-install cache-miss
+65 silly fetch manifest node-addon-api@^7.1.0
+66 silly packumentCache full:https://registry.npmjs.org/node-addon-api cache-miss
+67 http fetch GET 200 https://registry.npmjs.org/node-addon-api 58ms (cache miss)
+68 silly packumentCache full:https://registry.npmjs.org/node-addon-api set size:undefined disposed:false
+69 http fetch GET 200 https://registry.npmjs.org/node-addon-api 68ms (cache miss)
+70 silly packumentCache full:https://registry.npmjs.org/node-addon-api set size:undefined disposed:false
+71 http fetch GET 200 https://registry.npmjs.org/prebuild-install 93ms (cache miss)
+72 silly packumentCache full:https://registry.npmjs.org/prebuild-install set size:undefined disposed:false
+73 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 136ms (cache miss)
+74 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 set size:undefined disposed:false
+75 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-linux-arm64@1.1.0 OK for: @lydell/node-pty@1.1.0 want: 1.1.0
+76 silly placeDep node_modules/@google/gemini-cli node-addon-api@4.3.0 OK for: keytar@7.9.0 want: ^4.3.0
+77 silly placeDep node_modules/@google/gemini-cli prebuild-install@7.1.3 OK for: keytar@7.9.0 want: ^7.0.1
+78 silly fetch manifest rc@^1.2.7
+79 silly packumentCache full:https://registry.npmjs.org/rc cache-miss
+80 silly fetch manifest pump@^3.0.0
+81 silly packumentCache full:https://registry.npmjs.org/pump cache-miss
+82 silly fetch manifest tar-fs@^2.0.0
+83 silly packumentCache full:https://registry.npmjs.org/tar-fs cache-miss
+84 silly fetch manifest minimist@^1.2.3
+85 silly packumentCache full:https://registry.npmjs.org/minimist cache-miss
+86 silly fetch manifest node-abi@^3.3.0
+87 silly packumentCache full:https://registry.npmjs.org/node-abi cache-miss
+88 silly fetch manifest simple-get@^4.0.0
+89 silly packumentCache full:https://registry.npmjs.org/simple-get cache-miss
+90 silly fetch manifest detect-libc@^2.0.0
+91 silly packumentCache full:https://registry.npmjs.org/detect-libc cache-miss
+92 silly fetch manifest tunnel-agent@^0.6.0
+93 silly packumentCache full:https://registry.npmjs.org/tunnel-agent cache-miss
+94 silly fetch manifest mkdirp-classic@^0.5.3
+95 silly packumentCache full:https://registry.npmjs.org/mkdirp-classic cache-miss
+96 http fetch GET 200 https://registry.npmjs.org/tunnel-agent 52ms (cache miss)
+97 silly packumentCache full:https://registry.npmjs.org/tunnel-agent set size:undefined disposed:false
+98 silly fetch manifest expand-template@^2.0.3
+99 silly packumentCache full:https://registry.npmjs.org/expand-template cache-miss
+100 http fetch GET 200 https://registry.npmjs.org/rc 57ms (cache miss)
+101 silly packumentCache full:https://registry.npmjs.org/rc set size:undefined disposed:false
+102 silly fetch manifest napi-build-utils@^2.0.0
+103 silly packumentCache full:https://registry.npmjs.org/napi-build-utils cache-miss
+104 http fetch GET 200 https://registry.npmjs.org/simple-get 59ms (cache miss)
+105 silly packumentCache full:https://registry.npmjs.org/simple-get set size:undefined disposed:false
+106 silly fetch manifest github-from-package@0.0.0
+107 silly packumentCache full:https://registry.npmjs.org/github-from-package cache-miss
+108 http fetch GET 200 https://registry.npmjs.org/pump 61ms (cache miss)
+109 silly packumentCache full:https://registry.npmjs.org/pump set size:undefined disposed:false
+110 http fetch GET 200 https://registry.npmjs.org/mkdirp-classic 62ms (cache miss)
+111 silly packumentCache full:https://registry.npmjs.org/mkdirp-classic set size:undefined disposed:false
+112 http fetch GET 200 https://registry.npmjs.org/node-abi 77ms (cache miss)
+113 silly packumentCache full:https://registry.npmjs.org/node-abi set size:undefined disposed:false
+114 http fetch GET 200 https://registry.npmjs.org/detect-libc 80ms (cache miss)
+115 silly packumentCache full:https://registry.npmjs.org/detect-libc set size:undefined disposed:false
+116 http fetch GET 200 https://registry.npmjs.org/minimist 85ms (cache miss)
+117 silly packumentCache full:https://registry.npmjs.org/minimist set size:undefined disposed:false
+118 http fetch GET 200 https://registry.npmjs.org/expand-template 57ms (cache miss)
+119 silly packumentCache full:https://registry.npmjs.org/expand-template set size:undefined disposed:false
+120 http fetch GET 200 https://registry.npmjs.org/github-from-package 57ms (cache miss)
+121 silly packumentCache full:https://registry.npmjs.org/github-from-package set size:undefined disposed:false
+122 http fetch GET 200 https://registry.npmjs.org/napi-build-utils 66ms (cache miss)
+123 silly packumentCache full:https://registry.npmjs.org/napi-build-utils set size:undefined disposed:false
+124 http fetch GET 200 https://registry.npmjs.org/tar-fs 194ms (cache miss)
+125 silly packumentCache full:https://registry.npmjs.org/tar-fs set size:undefined disposed:false
+126 silly placeDep node_modules/@google/gemini-cli/node_modules/node-pty node-addon-api@7.1.1 OK for: node-pty@1.1.0 want: ^7.1.0
+127 silly placeDep node_modules/@google/gemini-cli detect-libc@2.1.2 OK for: prebuild-install@7.1.3 want: ^2.0.0
+128 silly placeDep node_modules/@google/gemini-cli expand-template@2.0.3 OK for: prebuild-install@7.1.3 want: ^2.0.3
+129 silly placeDep node_modules/@google/gemini-cli github-from-package@0.0.0 OK for: prebuild-install@7.1.3 want: 0.0.0
+130 silly placeDep node_modules/@google/gemini-cli minimist@1.2.8 OK for: prebuild-install@7.1.3 want: ^1.2.3
+131 silly placeDep node_modules/@google/gemini-cli mkdirp-classic@0.5.3 OK for: prebuild-install@7.1.3 want: ^0.5.3
+132 silly placeDep node_modules/@google/gemini-cli napi-build-utils@2.0.0 OK for: prebuild-install@7.1.3 want: ^2.0.0
+133 silly placeDep node_modules/@google/gemini-cli node-abi@3.89.0 OK for: prebuild-install@7.1.3 want: ^3.3.0
+134 silly placeDep node_modules/@google/gemini-cli pump@3.0.4 OK for: prebuild-install@7.1.3 want: ^3.0.0
+135 silly placeDep node_modules/@google/gemini-cli rc@1.2.8 OK for: prebuild-install@7.1.3 want: ^1.2.7
+136 silly placeDep node_modules/@google/gemini-cli simple-get@4.0.1 OK for: prebuild-install@7.1.3 want: ^4.0.0
+137 silly placeDep node_modules/@google/gemini-cli tar-fs@2.1.4 OK for: prebuild-install@7.1.3 want: ^2.0.0
+138 silly placeDep node_modules/@google/gemini-cli tunnel-agent@0.6.0 OK for: prebuild-install@7.1.3 want: ^0.6.0
+139 silly fetch manifest semver@^7.3.5
+140 silly packumentCache full:https://registry.npmjs.org/semver cache-miss
+141 silly fetch manifest end-of-stream@^1.1.0
+142 silly packumentCache full:https://registry.npmjs.org/end-of-stream cache-miss
+143 silly fetch manifest once@^1.3.1
+144 silly packumentCache full:https://registry.npmjs.org/once cache-miss
+145 silly fetch manifest ini@~1.3.0
+146 silly packumentCache full:https://registry.npmjs.org/ini cache-miss
+147 silly fetch manifest deep-extend@^0.6.0
+148 silly packumentCache full:https://registry.npmjs.org/deep-extend cache-miss
+149 silly fetch manifest strip-json-comments@~2.0.1
+150 silly packumentCache full:https://registry.npmjs.org/strip-json-comments cache-miss
+151 silly fetch manifest decompress-response@^6.0.0
+152 silly packumentCache full:https://registry.npmjs.org/decompress-response cache-miss
+153 silly fetch manifest once@^1.3.1
+154 silly packumentCache full:https://registry.npmjs.org/once cache-miss
+155 silly fetch manifest simple-concat@^1.0.0
+156 silly packumentCache full:https://registry.npmjs.org/simple-concat cache-miss
+157 http fetch GET 200 https://registry.npmjs.org/once 54ms (cache miss)
+158 silly packumentCache full:https://registry.npmjs.org/once set size:undefined disposed:false
+159 silly fetch manifest chownr@^1.1.1
+160 silly packumentCache full:https://registry.npmjs.org/chownr cache-miss
+161 http fetch GET 200 https://registry.npmjs.org/deep-extend 64ms (cache miss)
+162 silly packumentCache full:https://registry.npmjs.org/deep-extend set size:undefined disposed:false
+163 silly fetch manifest tar-stream@^2.1.4
+164 silly packumentCache full:https://registry.npmjs.org/tar-stream cache-miss
+165 http fetch GET 200 https://registry.npmjs.org/once 64ms (cache miss)
+166 silly packumentCache full:https://registry.npmjs.org/once set size:undefined disposed:false
+167 silly fetch manifest safe-buffer@^5.0.1
+168 silly packumentCache full:https://registry.npmjs.org/safe-buffer cache-miss
+169 http fetch GET 200 https://registry.npmjs.org/ini 66ms (cache miss)
+170 silly packumentCache full:https://registry.npmjs.org/ini set size:undefined disposed:false
+171 http fetch GET 200 https://registry.npmjs.org/semver 67ms (cache miss)
+172 silly packumentCache full:https://registry.npmjs.org/semver set size:undefined disposed:false
+173 http fetch GET 200 https://registry.npmjs.org/decompress-response 69ms (cache miss)
+174 silly packumentCache full:https://registry.npmjs.org/decompress-response set size:undefined disposed:false
+175 http fetch GET 200 https://registry.npmjs.org/simple-concat 71ms (cache miss)
+176 silly packumentCache full:https://registry.npmjs.org/simple-concat set size:undefined disposed:false
+177 http fetch GET 200 https://registry.npmjs.org/end-of-stream 71ms (cache miss)
+178 silly packumentCache full:https://registry.npmjs.org/end-of-stream set size:undefined disposed:false
+179 http fetch GET 200 https://registry.npmjs.org/strip-json-comments 79ms (cache miss)
+180 silly packumentCache full:https://registry.npmjs.org/strip-json-comments set size:undefined disposed:false
+181 http fetch GET 200 https://registry.npmjs.org/chownr 66ms (cache miss)
+182 silly packumentCache full:https://registry.npmjs.org/chownr set size:undefined disposed:false
+183 http fetch GET 200 https://registry.npmjs.org/safe-buffer 62ms (cache miss)
+184 silly packumentCache full:https://registry.npmjs.org/safe-buffer set size:undefined disposed:false
+185 http fetch GET 200 https://registry.npmjs.org/tar-stream 71ms (cache miss)
+186 silly packumentCache full:https://registry.npmjs.org/tar-stream set size:undefined disposed:false
+187 silly placeDep node_modules/@google/gemini-cli semver@7.7.4 OK for: node-abi@3.89.0 want: ^7.3.5
+188 silly placeDep node_modules/@google/gemini-cli end-of-stream@1.4.5 OK for: pump@3.0.4 want: ^1.1.0
+189 silly placeDep node_modules/@google/gemini-cli once@1.4.0 OK for: pump@3.0.4 want: ^1.3.1
+190 silly fetch manifest once@^1.4.0
+191 silly packumentCache full:https://registry.npmjs.org/once cache-miss
+192 silly fetch manifest wrappy@1
+193 silly packumentCache full:https://registry.npmjs.org/wrappy cache-miss
+194 http cache https://registry.npmjs.org/once 4ms (cache hit)
+195 silly packumentCache full:https://registry.npmjs.org/once set size:11752 disposed:false
+196 http fetch GET 200 https://registry.npmjs.org/wrappy 52ms (cache miss)
+197 silly packumentCache full:https://registry.npmjs.org/wrappy set size:undefined disposed:false
+198 silly placeDep node_modules/@google/gemini-cli wrappy@1.0.2 OK for: once@1.4.0 want: 1
+199 silly placeDep node_modules/@google/gemini-cli deep-extend@0.6.0 OK for: rc@1.2.8 want: ^0.6.0
+200 silly placeDep node_modules/@google/gemini-cli ini@1.3.8 OK for: rc@1.2.8 want: ~1.3.0
+201 silly placeDep node_modules/@google/gemini-cli strip-json-comments@2.0.1 OK for: rc@1.2.8 want: ~2.0.1
+202 silly placeDep node_modules/@google/gemini-cli decompress-response@6.0.0 OK for: simple-get@4.0.1 want: ^6.0.0
+203 silly placeDep node_modules/@google/gemini-cli simple-concat@1.0.1 OK for: simple-get@4.0.1 want: ^1.0.0
+204 silly fetch manifest mimic-response@^3.1.0
+205 silly packumentCache full:https://registry.npmjs.org/mimic-response cache-miss
+206 http fetch GET 200 https://registry.npmjs.org/mimic-response 56ms (cache miss)
+207 silly packumentCache full:https://registry.npmjs.org/mimic-response set size:undefined disposed:false
+208 silly placeDep node_modules/@google/gemini-cli mimic-response@3.1.0 OK for: decompress-response@6.0.0 want: ^3.1.0
+209 silly placeDep node_modules/@google/gemini-cli chownr@1.1.4 OK for: tar-fs@2.1.4 want: ^1.1.1
+210 silly placeDep node_modules/@google/gemini-cli tar-stream@2.2.0 OK for: tar-fs@2.1.4 want: ^2.1.4
+211 silly fetch manifest bl@^4.0.3
+212 silly packumentCache full:https://registry.npmjs.org/bl cache-miss
+213 silly fetch manifest inherits@^2.0.3
+214 silly packumentCache full:https://registry.npmjs.org/inherits cache-miss
+215 silly fetch manifest fs-constants@^1.0.0
+216 silly packumentCache full:https://registry.npmjs.org/fs-constants cache-miss
+217 silly fetch manifest readable-stream@^3.1.1
+218 silly packumentCache full:https://registry.npmjs.org/readable-stream cache-miss
+219 http fetch GET 200 https://registry.npmjs.org/fs-constants 66ms (cache miss)
+220 silly packumentCache full:https://registry.npmjs.org/fs-constants set size:undefined disposed:false
+221 http fetch GET 200 https://registry.npmjs.org/readable-stream 68ms (cache miss)
+222 silly packumentCache full:https://registry.npmjs.org/readable-stream set size:undefined disposed:false
+223 http fetch GET 200 https://registry.npmjs.org/inherits 83ms (cache miss)
+224 silly packumentCache full:https://registry.npmjs.org/inherits set size:undefined disposed:false
+225 http fetch GET 200 https://registry.npmjs.org/bl 124ms (cache miss)
+226 silly packumentCache full:https://registry.npmjs.org/bl set size:undefined disposed:false
+227 silly placeDep node_modules/@google/gemini-cli bl@4.1.0 OK for: tar-stream@2.2.0 want: ^4.0.3
+228 silly placeDep node_modules/@google/gemini-cli fs-constants@1.0.0 OK for: tar-stream@2.2.0 want: ^1.0.0
+229 silly placeDep node_modules/@google/gemini-cli inherits@2.0.4 OK for: tar-stream@2.2.0 want: ^2.0.3
+230 silly placeDep node_modules/@google/gemini-cli readable-stream@3.6.2 OK for: tar-stream@2.2.0 want: ^3.1.1
+231 silly fetch manifest buffer@^5.5.0
+232 silly packumentCache full:https://registry.npmjs.org/buffer cache-miss
+233 silly fetch manifest inherits@^2.0.4
+234 silly packumentCache full:https://registry.npmjs.org/inherits cache-miss
+235 silly fetch manifest readable-stream@^3.4.0
+236 silly packumentCache full:https://registry.npmjs.org/readable-stream cache-miss
+237 silly fetch manifest string_decoder@^1.1.1
+238 silly packumentCache full:https://registry.npmjs.org/string_decoder cache-miss
+239 silly fetch manifest util-deprecate@^1.0.1
+240 silly packumentCache full:https://registry.npmjs.org/util-deprecate cache-miss
+241 http cache https://registry.npmjs.org/readable-stream 4ms (cache hit)
+242 silly packumentCache full:https://registry.npmjs.org/readable-stream set size:261096 disposed:false
+243 http cache https://registry.npmjs.org/inherits 5ms (cache hit)
+244 silly packumentCache full:https://registry.npmjs.org/inherits set size:12925 disposed:false
+245 http fetch GET 200 https://registry.npmjs.org/string_decoder 61ms (cache miss)
+246 silly packumentCache full:https://registry.npmjs.org/string_decoder set size:undefined disposed:false
+247 http fetch GET 200 https://registry.npmjs.org/buffer 72ms (cache miss)
+248 silly packumentCache full:https://registry.npmjs.org/buffer set size:undefined disposed:false
+249 http fetch GET 200 https://registry.npmjs.org/util-deprecate 74ms (cache miss)
+250 silly packumentCache full:https://registry.npmjs.org/util-deprecate set size:undefined disposed:false
+251 silly placeDep node_modules/@google/gemini-cli buffer@5.7.1 OK for: bl@4.1.0 want: ^5.5.0
+252 silly fetch manifest base64-js@^1.3.1
+253 silly packumentCache full:https://registry.npmjs.org/base64-js cache-miss
+254 silly fetch manifest ieee754@^1.1.13
+255 silly packumentCache full:https://registry.npmjs.org/ieee754 cache-miss
+256 http fetch GET 200 https://registry.npmjs.org/base64-js 53ms (cache miss)
+257 silly packumentCache full:https://registry.npmjs.org/base64-js set size:undefined disposed:false
+258 http fetch GET 200 https://registry.npmjs.org/ieee754 69ms (cache miss)
+259 silly packumentCache full:https://registry.npmjs.org/ieee754 set size:undefined disposed:false
+260 silly placeDep node_modules/@google/gemini-cli base64-js@1.5.1 OK for: buffer@5.7.1 want: ^1.3.1
+261 silly placeDep node_modules/@google/gemini-cli ieee754@1.2.1 OK for: buffer@5.7.1 want: ^1.1.13
+262 silly placeDep node_modules/@google/gemini-cli string_decoder@1.3.0 OK for: readable-stream@3.6.2 want: ^1.1.1
+263 silly placeDep node_modules/@google/gemini-cli util-deprecate@1.0.2 OK for: readable-stream@3.6.2 want: ^1.0.1
+264 silly fetch manifest safe-buffer@~5.2.0
+265 silly packumentCache full:https://registry.npmjs.org/safe-buffer cache-miss
+266 http cache https://registry.npmjs.org/safe-buffer 2ms (cache hit)
+267 silly packumentCache full:https://registry.npmjs.org/safe-buffer set size:41183 disposed:false
+268 silly placeDep node_modules/@google/gemini-cli safe-buffer@5.2.1 OK for: string_decoder@1.3.0 want: ~5.2.0
+269 silly reify mark retired [
+269 silly reify   '/usr/local/lib/node_modules/@google/gemini-cli',
+269 silly reify   '/usr/local/bin/gemini'
+269 silly reify ]
+270 silly reify moves {
+270 silly reify   '/usr/local/lib/node_modules/@google/gemini-cli': '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o',
+270 silly reify   '/usr/local/bin/gemini': '/usr/local/bin/.gemini-7xiPbSuB'
+270 silly reify }
+271 verbose stack Error: EACCES: permission denied, rename '/usr/local/lib/node_modules/@google/gemini-cli' -> '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+271 verbose stack     at async Object.rename (node:internal/fs/promises:782:10)
+271 verbose stack     at async moveFile (/usr/local/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+271 verbose stack     at async Promise.allSettled (index 0)
+271 verbose stack     at async #reifyPackages (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:309:11)
+271 verbose stack     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:121:5)
+271 verbose stack     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:151:5)
+271 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+271 verbose stack     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5)
+272 error code EACCES
+273 error syscall rename
+274 error path /usr/local/lib/node_modules/@google/gemini-cli
+275 error dest /usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o
+276 error errno -13
+277 error Error: EACCES: permission denied, rename '/usr/local/lib/node_modules/@google/gemini-cli' -> '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+277 error     at async Object.rename (node:internal/fs/promises:782:10)
+277 error     at async moveFile (/usr/local/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+277 error     at async Promise.allSettled (index 0)
+277 error     at async #reifyPackages (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:309:11)
+277 error     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:121:5)
+277 error     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:151:5)
+277 error     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+277 error     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5) {
+277 error   errno: -13,
+277 error   code: 'EACCES',
+277 error   syscall: 'rename',
+277 error   path: '/usr/local/lib/node_modules/@google/gemini-cli',
+277 error   dest: '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+277 error }
+278 error
+278 error The operation was rejected by your operating system.
+278 error It is likely you do not have the permissions to access this file as the current user
+278 error
+278 error If you believe this might be a permissions issue, please double-check the
+278 error permissions of the file and its containing directories, or try running
+278 error the command again as root/Administrator.
+279 silly unfinished npm timer reify 1775760524026
+280 silly unfinished npm timer reify:retireShallow 1775760525424
+281 verbose cwd /Users/benjaminlear/GitHub/publications/KristenPulse/AlexeyILT
+282 verbose os Darwin 25.4.0
+283 verbose node v24.14.0
+284 verbose npm  v11.9.0
+285 notice
+285 notice New minor version of npm available! 11.9.0 -> 11.12.1
+285 notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+285 notice To update run: npm install -g npm@11.12.1
+285 notice  { force: true, Symbol(proc-log.meta): true }
+286 verbose exit -13
+287 verbose code -13
+288 error A complete log of this run can be found in: /Users/benjaminlear/GitHub/publications/KristenPulse/AlexeyILT/.npm-cache/_logs/2026-04-09T18_48_43_883Z-debug-0.log
