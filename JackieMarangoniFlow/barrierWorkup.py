@@ -452,7 +452,13 @@ def _(
             #lineplot.add_scatter(x = binned_distances, y = binned_heights+binned_se - y_offset, line = dict(color = 'rgb(39, 174, 246)', width = 0), fill = "tozeroy", fillcolor = 'rgb(39, 174, 246)', showlegend = True, name = f"segment {int(_i/2+1)}")
             #lineplot.add_scatter(x = binned_distances, y = binned_heights-binned_se - y_offset, line = dict(color = 'rgb(39, 174, 246)', width = 0), fill = "tozeroy", fillcolor="white", showlegend = False)
             map_with_profiles.add_scatter(x = binned_distances*downsampled_scales[0], y = binned_heights-y_offset, line = dict(color = 'rgb(7, 115, 177)'), showlegend = False, row = int(_i/2)+2, col = 1)
+        
+            map_with_profiles.add_annotation(x = np.min(binned_distances*downsampled_scales[0]), y = np.max(binned_heights-y_offset), 
+                                             text=f"line {int(_i/2)+1}: initial=({start_x}, {start_y}), final=({end_x}, {end_y})", 
+                                             showarrow = False, xanchor="left", yanchor="bottom",
+                                             row = int(_i/2)+2, col = 1)
             map_with_profiles.add_annotation(x = 0, y = 0, text = f"largest height difference = {(np.max(binned_heights) - np.min(binned_heights)):0.1f} microns; stdev = {np.std(binned_heights):.1f} microns", xanchor="left", yanchor = "bottom", showarrow = False, row = int(_i/2)+2, col = 1)
+        
             map_with_profiles.update_yaxes(title = "microns", range = [0, max(maxlist)], row = int(_i/2)+2, col = 1)
 
 
