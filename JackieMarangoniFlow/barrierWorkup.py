@@ -343,13 +343,6 @@ def _(x_list, y_list):
 
 
 @app.cell
-def _(mo):
-    write_button = mo.ui.run_button(label="Write html file of plots.")
-    write_button
-    return (write_button,)
-
-
-@app.cell
 def _(
     bin_profile_with_se,
     custom_scale,
@@ -357,6 +350,7 @@ def _(
     downsampled_scales,
     downsampled_zs,
     extract_rect_profile,
+    file_input,
     go,
     make_subplots,
     mo,
@@ -424,11 +418,14 @@ def _(
             #print(_i)
             start_x = x_list[_i]
             end_x = x_list[_i+1]
+            x_range = end_x - start_x
 
             start_y = y_list[_i]
             end_y = y_list[_i+1]
+            y_range = end_y - start_y
 
-            map_with_profiles.add_annotation(x = start_x, y = start_y, text = f"{int(_i/2 + 1)}", showarrow=False, font = dict(color = "white"))
+            map_with_profiles.add_annotation(x = start_x + 0.1*x_range, y = start_y + 0.1*y_range, text = f"{int(_i/2 + 1)}i", showarrow=False, font = dict(color = "white"))
+            map_with_profiles.add_annotation(x = end_x - 0.1*x_range, y = end_y - 0.1*y_range, text = f"{int(_i/2 + 1)}f", showarrow=False, font = dict(color = "white"))
 
             shapes_list.append(
             dict(
@@ -472,8 +469,11 @@ def _(
     map_with_profiles.update_layout(
         template = "simple_white",
         width = 600, 
-        height = 600 + 100* int(len(x_list)/2)
+        height = 600 + 100* int(len(x_list)/2),
+        yaxis = dict(scaleanchor="x",scaleratio=1),
+        title = f"</br>{file_input.value}, </br>x-scale = {downsampled_scales[0]*1e6} microns, </br>y-scale = {downsampled_scales[1]*1e6} microns"
     )
+
 
 
     lineplot.update_layout(template = "simple_white")
@@ -481,7 +481,7 @@ def _(
 
 
     mo.ui.plotly(map_with_profiles)
-    return binned_heights, lineplot, map_with_profiles
+    return binned_heights, map_with_profiles
 
 
 @app.cell
@@ -491,9 +491,16 @@ def _(cutoff_input, xs_input, ys_input):
 
 
 @app.cell
-def _(file_input, map_with_profiles, write_button):
-    if write_button.value: 
-        map_with_profiles.write_html(f"{file_input.value}.html")
+def _(mo):
+    write_button = mo.ui.run_button(label="Write html file of plots.")
+    write_button
+    return (write_button,)
+
+
+@app.cell
+def _(file_input, map_with_profiles, mo, write_button):
+    mo.stop(not write_button.value)
+    map_with_profiles.write_html(f"{file_input.value}.html")
     return
 
 
@@ -504,14 +511,14 @@ def _():
 
 
 @app.cell
-def _(lineplot):
-    lineplot.write_image("testImg.png")
+def _(downsampled_scales):
+    downsampled_scales
     return
 
 
 @app.cell
-def _(downsampled_scales):
-    downsampled_scales
+def _(write_button):
+    write_button.value
     return
 
 
