@@ -14,6 +14,7 @@ def _():
     from scipy.ndimage import gaussian_filter1d
     from plotly.subplots import make_subplots
     from lmfit import Model
+    import plotly.graph_objects as go
 
     #import modules specifically written for this 
     import pulsePhysics as pp
@@ -21,20 +22,33 @@ def _():
 
     reload(pp)
     reload(mh)
-
-    return Model, make_subplots, mh, np, pp
+    return Model, go, make_subplots, mh, np, pp, reload
 
 
 @app.cell
-def _(np):
+def _(make_subplots, np):
     # read spectral data files
     dodecaneH_tolueneH_spectra =  np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/PdSC12_Tol MIMS tau140 11730G 10K 9.466690 Q250207_03.csv", delimiter="," ,unpack = True, skip_header = 1)
     dodecaneD_tolueneH_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/dPdSC12_Tol MIMS tau140 11729G 10K 9.517308 Q250325_04_export.csv", delimiter="," ,unpack = True, skip_header = 1)
     dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter="," ,unpack = True, skip_header = 1)
+
+    # convert from MHz to Hz
+    dodecaneH_tolueneH_spectra[0] = dodecaneH_tolueneH_spectra[0]*1e6
+
+    dodecaneD_tolueneH_spectra[0] = dodecaneD_tolueneH_spectra[0]*1e6
+
+    dodecaneH_tolueneD_spectra[0] = dodecaneH_tolueneD_spectra[0]*1e6
+
+    expPlot = make_subplots(rows = 3, cols = 1)
+    for _i, _spectrum in enumerate([dodecaneH_tolueneH_spectra, dodecaneD_tolueneH_spectra, dodecaneH_tolueneD_spectra], start = 1):
+        expPlot.add_scatter(x = _spectrum[0], y = _spectrum[1], row = _i, col = 1)
+    expPlot.show()
+
     return (
         dodecaneD_tolueneH_spectra,
         dodecaneH_tolueneD_spectra,
         dodecaneH_tolueneH_spectra,
+        expPlot,
     )
 
 
@@ -44,9 +58,10 @@ def _(np):
 
     # high density files
     hd_toluene_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/toluene_distances_high_density.csv",
-                                       delimiter = ",")
+                                       delimiter = ",")*1e-10 # convert to m
     hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
-                                       delimiter = ",")
+                                       delimiter = ",")*1e-10 # convert to m
+
     return hd_dodecanethiol_distances, hd_toluene_distances
 
 
@@ -59,8 +74,8 @@ def _():
 @app.cell
 def _():
     # constants
-    R_np_md = 15  #radius in Angstroms for the particle in teh MD simluations
-    bulk_toluene_density = 0.0453  # number of hydrogens per cubic angstrom
+    R_np_md = 15e-10  #radius in m for the particle in teh MD simluations
+    bulk_toluene_density = 0.0453e30  # number of hydrogens per cubic m (used to be angtroms)
     bulk_dodecanethiol_density = 0 # the density of hydrogens coming from the ligand at r = infinity
     return R_np_md, bulk_toluene_density
 
@@ -78,7 +93,7 @@ def _(
     # process md data files
 
     #toluene
-    hd_toluene_profile = mh.NPDensityProfile(hd_toluene_distances, R_np_md, bin_width=0.1)
+    hd_toluene_profile = mh.NPDensityProfile(hd_toluene_distances, R_np_md, bin_width=0.1e-10)
     hd_toluene_profile.prepare_blended_density(rho_bulk = bulk_toluene_density)
 
     #ligand
@@ -87,14 +102,14 @@ def _(
 
     densityPLot  = make_subplots()
 
-    densityPLot.add_scatter(x = np.array(hd_dodecanethiol_profile.bin_centers)/10, y = hd_dodecanethiol_profile.densities, 
+    densityPLot.add_scatter(x = np.array(hd_dodecanethiol_profile.bin_centers), y = hd_dodecanethiol_profile.densities, 
                                   line = dict(color = "#BB6F35"), fill = "tozeroy")
-    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)/10, y = hd_toluene_profile.densities, 
+    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers), y = hd_toluene_profile.densities, 
                            line = dict(color = "#448CC4"), fill = "tozeroy")
     #densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)/10, y = hd_toluene_profile.densities+hd_dodecanethiol_profile.densities, line = dict(color = "#94A2B1"))
 
     densityPLot.update_layout(template = "simple_white",showlegend = False, width = 300*2, height = 300*1.4)
-    densityPLot.update_xaxes(range = [0, 3.4], title = "radial distance /nm")
+    densityPLot.update_xaxes(range = [0, 34e-10], title = "radial distance /nm")
     densityPLot.update_yaxes(title = "H density")
     densityPLot.show()
     return hd_dodecanethiol_profile, hd_toluene_profile
@@ -102,39 +117,22 @@ def _(
 
 @app.cell
 def _(
-    D_np,
-    H_np,
     I1_guess,
     I2_guess,
     I3_guess,
     I_scale_guess,
     Model,
     R_max_guess,
-    T_m,
     c1_guess,
     c2_guess,
     c3_guess,
     contact_scale_guess,
     dipolar_scale_guess,
-    dodecaneD_tolueneH_spectra,
-    dodecaneH_tolueneD_spectra,
-    dodecaneH_tolueneH_spectra,
     ell_guess,
     eta_guess,
-    g_e,
-    g_n,
-    len1,
-    len2,
-    ligand_density_obj,
     np,
     nu_n_guess,
     pp,
-    rho_bulk_ligand,
-    rho_bulk_solvent,
-    shape,
-    solvent_density_obj,
-    target_dr,
-    tau,
     width_scale_guess,
 ):
     # fit
@@ -147,7 +145,7 @@ def _(
         len1, len2, # to be used for indices
         I1, I2, I3, # final intensity for each spectra
         c1, c2, c3, # final background for each spectra
-    
+
         # properties of the nanoparticles
         H_np, D_np, # objects containing size info for the protio and duetero ligand protected nanoparticles. This should be paired lists of bin center and frequency.
 
@@ -168,7 +166,7 @@ def _(
 
         # properties of the simulation
         R_max, # unit = m, how far out in the simulation to look 
-        target_dr = 0.2E-9, # unit = m, 
+        target_dr = 0.2E-10, # unit = m, 
         dipolar_scale = 1, 
         contact_scale = 1, 
 
@@ -197,10 +195,12 @@ def _(
             [1, 0.02, 1], # ligand weighting, based on dueterium percentage
             [H_np, D_np, H_np],
         ):
+            #print(I)
             for r, d in zip(rs[0], rs[1]): # go through each particle size 
+                #print(r)
                 y_solvent = pp.simulate_nanoparticle_mims_spectrum(
                     freq,
-                
+
                     r,
 
                     solvent_density_obj,
@@ -227,7 +227,7 @@ def _(
 
                 y_ligand = pp.simulate_nanoparticle_mims_spectrum(
                     freq,
-                
+
                     r,
 
                     ligand_density_obj,
@@ -251,10 +251,10 @@ def _(
                     eta, 
                     width_scale
                 )
-    
-    
+
+                #qp.quickScatter(x = freq, y = y_ligand)
                 raw_ys = d*(s*y_solvent + l*y_ligand) # weight contribution of the ligand and solvent by percentage H, and then also weight the total by the density of the nanoparticle size we are looking at
-        
+
             norm_ys = raw_ys/np.max(raw_ys) # normalize all the summed contributions
 
             scaled_ys = norm_ys*I + c # then adjust by the intensity and background
@@ -284,50 +284,204 @@ def _(
         ("c1", c1_guess, True, None, None), 
         ("c2", c2_guess, True, None, None),
         ("c3", c3_guess, True, None, None), # final background for each spectra   
-    
+
         ("nu_n", nu_n_guess, True, None, None), # in Hz
-    
+
         ("I_scale", I_scale_guess, False, 0, None), 
         ("ell", ell_guess, True, 0, None), # in meters
-    
+
         ('R_max', R_max_guess, False, 0, None),
-    
-        ('dipolar_scale', dipolar_scale_guess, False, 0, None),
-        ('contact_scale', contact_scale_guess, False, 0, None),    
+
+        ('dipolar_scale', dipolar_scale_guess, True, 0, None),
+        ('contact_scale', contact_scale_guess, True, 0, None),    
         ("eta", eta_guess, False, 0, None),
         ("width_scale", width_scale_guess, False, 0, None),
         ) 
     #triple_spectra_model_params['R_max'].diff_step = diff_step=dodecaneH_tolueneH_spectra[0][1] - dodecaneH_tolueneH_spectra[0][0] # Make diff_step for R_max roughly equal to your dr
 
+
+    return (
+        triple_mims_simulation,
+        triple_mims_simulation_model,
+        triple_mims_simulation_params,
+    )
+
+
+@app.cell
+def _(
+    D_np,
+    H_np,
+    T_m,
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    g_e,
+    g_n,
+    len1,
+    len2,
+    ligand_density_obj,
+    np,
+    rho_bulk_ligand,
+    rho_bulk_solvent,
+    shape,
+    solvent_density_obj,
+    target_dr,
+    tau,
+    triple_mims_simulation_model,
+    triple_mims_simulation_params,
+):
     # forth, fit the model to the data
     triple_mims_simulation_fit = triple_mims_simulation_model.fit(
         np.concatenate([dodecaneH_tolueneH_spectra[1], dodecaneD_tolueneH_spectra[1], dodecaneH_tolueneD_spectra[1]]), 
         xs = np.concatenate([dodecaneH_tolueneH_spectra[0], dodecaneD_tolueneH_spectra[0], dodecaneH_tolueneD_spectra[0]]),
         params = triple_mims_simulation_params,
-    
+
         len1 = len1,
         len2 = len2,
 
         H_np = H_np, 
         D_np = D_np,
-    
+
         solvent_density_obj = solvent_density_obj, 
         rho_bulk_solvent = rho_bulk_solvent,                  
         ligand_density_obj = ligand_density_obj, 
         rho_bulk_ligand = rho_bulk_ligand,
         g_n = g_n, 
-    
+
         g_e = g_e,
-    
+
         tau = tau,
         T_m = T_m,
-    
+
         target_dr = target_dr,
 
         shape = shape, 
-    
+
         iter_cb=my_callback
     )
+    return (triple_mims_simulation_fit,)
+
+
+@app.cell
+def _(
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    len1,
+    len2,
+    make_subplots,
+    triple_mims_simulation_fit,
+):
+    print(triple_mims_simulation_fit.fit_report())
+
+    # plot
+
+    fitplot = make_subplots(rows = 3, cols = 1, subplot_titles= ["solvent-H + ligand-H", "solvent-H + ligand-D", "solvent-D + ligand-H"])
+    fitplot.update_layout(template = "simple_white", width = 500, height = 500)
+
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneH_tolueneH_spectra[1], line = dict(color = "#ffabff", width = 5), showlegend = False, col = 1, row = 1)
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= triple_mims_simulation_fit.best_fit[:len1], line = dict(color = "black"), showlegend = False, col = 1, row = 1)
+
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneD_tolueneH_spectra[1], line = dict(color = "#ffabac", width = 5), showlegend = False, col = 1, row = 2)
+    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_mims_simulation_fit.best_fit[len1:len1+len2], line = dict(color = "black"), showlegend = False, col = 1, row = 2)
+
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneH_tolueneD_spectra[1], line = dict(color = "#ababff", width = 5), showlegend = False, col = 1, row = 3)
+    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= triple_mims_simulation_fit.best_fit[len1+len2:], line = dict(color = "black"), showlegend = False, col = 1, row = 3)
+    fitplot.update_xaxes(title = "frequency /MHz", row = 3, col = 1)
+    fitplot.show()
+    return
+
+
+@app.cell
+def _(
+    D_np,
+    H_np,
+    I1_guess,
+    I2_guess,
+    I3_guess,
+    I_scale_guess,
+    R_max_guess,
+    T_m,
+    c1_guess,
+    c2_guess,
+    c3_guess,
+    contact_scale_guess,
+    dipolar_scale_guess,
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    ell_guess,
+    eta_guess,
+    expPlot,
+    g_e,
+    g_n,
+    go,
+    len1,
+    len2,
+    ligand_density_obj,
+    np,
+    nu_n_guess,
+    pp,
+    reload,
+    rho_bulk_ligand,
+    rho_bulk_solvent,
+    shape,
+    solvent_density_obj,
+    target_dr,
+    tau,
+    triple_mims_simulation,
+    width_scale_guess,
+):
+    reload(pp)
+    # simulate, before fit
+    sim_spectra = triple_mims_simulation(
+        np.concatenate([dodecaneH_tolueneH_spectra[0], dodecaneD_tolueneH_spectra[0], dodecaneH_tolueneD_spectra[0]]), # the x-values to calculate intensities for. These are concatenated from the spectra
+
+        # properties of just the final spectra we are fitting to
+        len1, len2, # to be used for indices
+        I1_guess, I2_guess, I3_guess, # final intensity for each spectra
+        c1_guess, c2_guess, c3_guess, # final background for each spectra
+
+        # properties of the nanoparticles
+        H_np, D_np, # objects containing size info for the protio and duetero ligand protected nanoparticles. This should be paired lists of bin center and frequency.
+
+        # properties of the nuclei
+        solvent_density_obj, rho_bulk_solvent,
+        ligand_density_obj, rho_bulk_ligand,
+        nu_n_guess, # central frequency... if we correct the mims, could be zero
+        g_n, # nuclear g-factor, depends on the atom identity
+
+        # properties of the electron
+        I_scale_guess, # unitless, a scalar that adjust intenisty, but should default to 1.
+        ell_guess, # unit of m, characteristic spatial distance of the decay
+        g_e, # electronic g-factor
+
+        #properties of the EPR experiment
+        tau, # unit = s, delay time of the pulse sequence
+        T_m, # unit = s, coherence lifetime
+
+        # properties of the simulation
+        R_max_guess, # unit = m, how far out in the simulation to look 
+        target_dr, # unit = m, 
+        dipolar_scale_guess, 
+        contact_scale_guess, 
+
+        # properties of the spectra
+        shape,
+        eta_guess,
+        width_scale_guess,
+        )
+
+
+
+
+    simplot  = go.Figure(expPlot)
+    simplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y = sim_spectra[:len1], row = 1, col = 1)
+    simplot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y = sim_spectra[len1:len1+len2], row = 2, col = 1)
+    simplot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y = sim_spectra[len1+len2:], row = 3, col = 1)
+    simplot.show()
+
+
     return
 
 
@@ -348,15 +502,15 @@ def _(
     D_np = [[1.5e-9],[1.0]] # bin center in m, frequency
 
     solvent_density_obj = hd_toluene_profile
-    rho_bulk_solvent = 0.0453 # number of hydrogens per cubic angstrom
+    rho_bulk_solvent = 0.0453e30 # number of hydrogens per cubic m (used to be cubic angstrom)
     ligand_density_obj = hd_dodecanethiol_profile
     rho_bulk_ligand = 0
     g_n = 5.5856946893 # from scipy constants
 
-    g_e = 1.9 # g-value for the nanoparticles
+    g_e = 2.0 # g-value for the nanoparticles
 
-    tau=140e-6 #
-    T_m = 140e-6 # in seconds.
+    tau = 140e-9 # in seconds
+    T_m = 674e-9 # in seconds.
 
     target_dr = 0.1e-9
 
@@ -377,7 +531,7 @@ def _(
 
     I_scale_guess = 1 # unitless
 
-    ell_guess = 1.3e9 # unit = m the decay constant for wavefunction
+    ell_guess = 0.2e-9 # unit = m the decay constant for wavefunction
 
     R_max_guess = 50e-9 # m, the max radius we look out to
 
@@ -386,7 +540,6 @@ def _(
 
     eta_guess = 0 # unitless
     width_scale_guess = 1 # unitless
-
 
 
 
@@ -450,7 +603,6 @@ def _():
 @app.cell
 def _():
     #TESTING
-
     return
 
 
