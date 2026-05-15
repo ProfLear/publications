@@ -1,11 +1,11 @@
-import scipy.constants.physical_constants as pc
+import scipy.constants as sc
 import numpy as np
 
 # constants, all in SI units
-mu_0   = pc["vacuum mag. permeability"] # J T^-1
-beta_e = pc["Bohr magneton"]            # J T^-1
-beta_n = pc["nuclear magneton"]         # J T^-1
-Planck = pc["Planck constant"]          # J s
+mu_0   = sc.physical_constants["vacuum mag. permeability"][0] # J T^-1
+beta_e = sc.physical_constants["Bohr magneton"][0]            # J T^-1
+beta_n = sc.physical_constants["nuclear magneton"][0]         # J T^-1
+Planck = sc.physical_constants["Planck constant"][0]          # J s
 
 def simulate_nanoparticle_mims_spectrum( # this function will return the y-values of a mims spectrum
     freq_axis, # the x-axis in the Mims spectrum
@@ -20,19 +20,24 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     g_n, # unitless, nuclear g-factor
 
     #properties of the electron
-    I0, # m^-3/2, Amplitude of the wavefunction at the surface of the nanoparticle. 
+    I_scale, # unitless, A scalar to apply to the amplitude of the wavefunction at the surface.  I guess just some wiggle thing here until I understand what is happening
     ell, # m, the characteristic spatial distance of the wavefunction
     g_e, # unitless, the isotropic g-value for the metallic electrons
 
     # properties of the EPR measurement
     tau, # s, the delay time of the Mims pulse sequence <- used to calcluate blind splot
     T_m, # s, the dephasing time for the metallic electron
-    sigma, # Hz,  the intrinsic width of the individual features
-    eta, # unitless; the amount of broadening strain. Tied to movement of nuclie during experiment
 
     #properties of the simulation
     R_max, # m; how far out to look for hydrogens when simulating
-    target_dr = 0.2 # nm; the target thickness of the various shells
+    target_dr = 0.2, # nm; the target thickness of the various shells
+    dipolar_scale = 1, # float, scale for the relative importance of dipolar coupling.  Set to 0 to turn off coupling mechanism
+    contact_scale = 1, # float, scale for the relative importance of contact coupling.  Set to 0 to turn off coupling mechanism
+
+    # properties of the spectrum
+    shape = "Lorentzian", # handles what line shape to use, will be either Gaussian, Lorentzian, or Voight
+    eta = 0, # unitless; the amount of broadening strain. Tied to movement of nuclie during experiment
+    width_scale = 1, # unitless,  scales the intrinsic width of the individual features
     ):
 
     """
@@ -61,6 +66,13 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     f_vec = freq_axis[np.newaxis, :] # convert the freq_axis from an array to a row vector
 
     # --- 3. INTEGRATION LOOP (Radial) ---
+
+    #start by doing a few calculations of the things that do not depend on r
+
+    common_scalar = mu_0*g_e*beta_e*g_n*beta_n/Planck
+    I0 = np.sqrt(1/(2*np.pi*ell*(R_np**2 + R_np*ell + 0.5*ell**2)))
+
+
     for r in r_full:
 
         # Pull density from the object (handles MD, Blending, and Toluene Bulk)
@@ -70,10 +82,12 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
 
         # Physics Calculation
         #A_contact = A0 * np.exp(-(max(0, r - R_np)) / ell)
-        A_contact = (2*mu_0*g_e*beta_e*g_nucleus*beta_n / (3*Planck))*(I0*exp(-(r - R_np)/ell))**2 # scalar, Hz; coupling constant
+        A_contact = 2/3*common_scalar*(I_scale*I0*exp(-(r - R_np)/ell))**2 # scalar, Hz; coupling constant
+        A_contact = contact_scale * A_contact
         
         #A_dipolar = (79.0 * (g_e / 2.0023)) / (r**3) 
-        A_dipolar = (mu_0*g_e*beta_e*g_nucleus*beta_n)/(4*np.pi*Planck*r**3)*(3 * cos_theta**2 - 1) # array, Hz; coupling constant
+        A_dipolar = (4*np.pi)^-1*(r^-3)*(3 * cos_theta**2 - 1) # array, Hz; coupling constant
+        A_dipolar = dipolar_scale * A_dipolar
         
         #A = A_contact + A_dipolar * (3 * cos_theta**2 - 1) # Array coupling constants for 150 angles
         A = A_contact + A_dipolar # array, Hz
@@ -86,19 +100,42 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
         # shell_sigma is a single value for this shell since A_contact is isotropic
         shell_sigma = np.sqrt(sigma**2 + (eta * np.abs(A_contact)**0.5)**2)  # scalar, Hz the dependence on A_iso can be changed to reflect different disorders
 
+        # calculate the resonance conditions
         # Vectorized Gaussian Calculation for all 150 orientations at once
         A_vec = A[:, np.newaxis] # convert the array to a column vector
         w_vec = w[:, np.newaxis] # convert the array to a column vector
         mu_plus = nu_n + A_vec / 2
         mu_minus = nu_n - A_vec / 2
 
-        # Area normalization: keeps intensity stable as the peak width changes
-        norm = shell_sigma * np.sqrt(2 * np.pi)
+        # now, create profiles for all the resonance positions calculated above. 
 
-        g_plus = (w_vec / norm) * np.exp(-0.5 * ((f_vec - mu_plus) / shell_sigma)**2) # use column and row vectors to Broadcast
-        g_minus = (w_vec / norm) * np.exp(-0.5 * ((f_vec - mu_minus) / shell_sigma)**2) # use column and row vectors to Broadcast
+        if shape[0] == "G":
+            # GAUSSIAN
+            # Area normalization: keeps intensity stable as the peak width changes
+            norm = shell_sigma * np.sqrt(2 * np.pi)
+
+            g_plus = (w_vec / norm) * np.exp(-0.5 * ((f_vec - mu_plus) / shell_sigma)**2) # use column and row vectors to Broadcast
+            g_minus = (w_vec / norm) * np.exp(-0.5 * ((f_vec - mu_minus) / shell_sigma)**2) # use column and row vectors to Broadcast
+
+        elif shape[0] == "L":
+            # LORENTZIAN
+            # --- CALCULATE WIDTH FROM DEPHASING TIME ---
+            # Conversion from time (s) to frequency width (Hz)
+            gamma_tm = 1 / (2 * np.pi * T_m)
+
+            # You can still keep eta for strain-based broadening if you suspect 
+            # the width increases with the strength of the contact coupling. <-- true??
+            shell_gamma = np.sqrt(gamma_tm**2 + (eta * np.abs(A_contact)**0.5)**2)
+
+            norm = np.pi * shell_gamma
+            g_plus = (w_vec / norm) * (shell_gamma / ((f_vec - mu_plus)**2 + shell_gamma**2))
+            g_minus = (w_vec / norm) * (shell_gamma / ((f_vec - mu_minus)**2 + shell_gamma**2))
+        elif shape[0] == "V":
+            # Voight
+            pass # to be written, if needed
 
         # Sum orientations into the master spectrum
         total_spectrum += np.sum(g_plus + g_minus, axis=0)
 
+        print(total_spectrum)
     return total_spectrum
