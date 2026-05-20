@@ -22,7 +22,7 @@ def _():
 
     reload(pp)
     reload(mh)
-    return Model, make_subplots, mh, mo, np, pp, qp, reload
+    return Model, make_subplots, mh, mo, np, pp, reload
 
 
 @app.cell(hide_code=True)
@@ -37,21 +37,29 @@ def _(mo):
 @app.cell
 def _(make_subplots, np):
     # read spectral data files
+
+
+    # for correcting resonance positions to 0
+    field_1 = 11745
+    field_2 = 11729
+    nu_G = 0.004262
+
+
     dodecaneH_tolueneH_spectra =  np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/PdSC12_Tol MIMS tau140 11730G 10K 9.466690 Q250207_03.csv", delimiter="," ,unpack = True, skip_header = 1)
     dodecaneD_tolueneH_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/dPdSC12_Tol MIMS tau140 11729G 10K 9.517308 Q250325_04_export.csv", delimiter="," ,unpack = True, skip_header = 1)
     dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter="," ,unpack = True, skip_header = 1)
 
-    # convert from MHz to Hz
-    dodecaneH_tolueneH_spectra[0] = dodecaneH_tolueneH_spectra[0]*1e6
-    dodecaneD_tolueneH_spectra[0] = dodecaneD_tolueneH_spectra[0]*1e6
-    dodecaneH_tolueneD_spectra[0] = dodecaneH_tolueneD_spectra[0]*1e6
+    # convert from MHz to Hz and correct for the resonance position to be at zero
+    dodecaneH_tolueneH_spectra[0] = (dodecaneH_tolueneH_spectra[0] - field_2 * nu_G)*1e6 
+    dodecaneD_tolueneH_spectra[0] = (dodecaneD_tolueneH_spectra[0] - field_2 * nu_G)*1e6
+    dodecaneH_tolueneD_spectra[0] = (dodecaneH_tolueneD_spectra[0] - field_1 * nu_G)*1e6
+
 
     expPlot = make_subplots(rows = 3, cols = 1)
     for _i, _spectrum in enumerate([dodecaneH_tolueneH_spectra, dodecaneD_tolueneH_spectra, dodecaneH_tolueneD_spectra], start = 1):
         expPlot.add_scatter(x = _spectrum[0], y = _spectrum[1], row = _i, col = 1)
     expPlot.update_layout(template = "simple_white")
     expPlot.show()
-
     return (
         dodecaneD_tolueneH_spectra,
         dodecaneH_tolueneD_spectra,
@@ -68,7 +76,6 @@ def _(np):
                                        delimiter = ",")*1e-10 # convert to m
     hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
                                        delimiter = ",")*1e-10 # convert to m
-
     return hd_dodecanethiol_distances, hd_toluene_distances
 
 
@@ -163,6 +170,8 @@ def _(np, pp):
         target_dr = 0.2E-10, # unit = m, 
         dipolar_scale = 1, 
         contact_scale = 1, 
+        blindspot_offset = 0,
+        dipolar_np_scale = 1,
 
         # properties of the spectra
         shape = "Lorentzian",
@@ -174,7 +183,7 @@ def _(np, pp):
         I2 = I2*1e6
         I3 = I3*1e6
 
-    
+
         # should sigma vary by sample? Or T_M?
 
 
@@ -202,34 +211,36 @@ def _(np, pp):
 
             # Integrate across the entire nanoparticle size distribution
             for r, weight_d in zip(rs[0], rs[1]): # unpack the rs  
-            
+
                 # Optimization: Only calculate solvent if it actually contributes
                 #print(f"r = {r}")
                 if s_weight > 0.0:
                     #print("calculating solvent")
                     y_solvent = pp.simulate_nanoparticle_mims_spectrum(
                         freq, 
-                    
+
                         r, 
-                    
+
                         solvent_density_obj, 
                         rho_bulk_solvent, 
                         nu_n, 
                         g_n, 
-                    
+
                         I_scale, 
                         ell, 
                         g_e, 
-                    
+
                         tau, 
                         T_m, 
-                    
+
                         R_np_md, 
                         R_max, 
                         target_dr, 
                         dipolar_scale, 
                         contact_scale, #contact_scale, # set to 0 to turn off for solvent. 
-                    
+                        blindspot_offset,
+                        dipolar_np_scale,
+
                         shape, 
                         eta, 
                         width_scale
@@ -240,7 +251,7 @@ def _(np, pp):
                 # Optimization: Only calculate ligand if it actually contributes
                 if l_weight > 0.00:
                     #print("calculating ligand")
-                    y_ligand = pp.simulate_nanoparticle_mims_spectrum(freq, r, ligand_density_obj, rho_bulk_ligand, nu_n, g_n, I_scale, ell, g_e, tau, T_m, R_np_md, R_max, target_dr, dipolar_scale, contact_scale, shape, eta, width_scale)
+                    y_ligand = pp.simulate_nanoparticle_mims_spectrum(freq, r, ligand_density_obj, rho_bulk_ligand, nu_n, g_n, I_scale, ell, g_e, tau, T_m, R_np_md, R_max, target_dr, dipolar_scale, contact_scale, blindspot_offset, dipolar_np_scale, shape, eta, width_scale)
                 else:
                     y_ligand = np.zeros_like(freq)
 
@@ -254,7 +265,7 @@ def _(np, pp):
         # Apply intensity scaling and background offsets to each integrated spectrum
         # If your experimental data is already normalized to 1, scaling individually here is fine,
         # but using a global max preserves the true physical intensity ratios.
-    
+
         scaled_both    = (all_raw_samples[0] / np.max(all_raw_samples[0])) * I1 + c1
         scaled_solvent = (all_raw_samples[1] / np.max(all_raw_samples[1])) * I2 + c2
         scaled_ligand  = (all_raw_samples[2] / np.max(all_raw_samples[2])) * I3 + c3
@@ -282,10 +293,12 @@ def _(
     R_max_guess,
     R_np_md,
     T_m,
+    blindspot_offset_guess,
     c1_guess,
     c2_guess,
     c3_guess,
     contact_scale_guess,
+    dipolar_np_scale_guess,
     dipolar_scale_guess,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
@@ -344,13 +357,14 @@ def _(
         target_dr, # unit = m, 
         dipolar_scale_guess, 
         contact_scale_guess, 
+        blindspot_offset_guess, 
+        dipolar_np_scale_guess, 
 
         # properties of the spectra
         shape,
         eta_guess,
         width_scale_guess,
         )
-
 
     return (sim_spectra,)
 
@@ -396,7 +410,7 @@ def _(
     sim_compare.add_scatter(x = dodecaneD_tolueneH_spectra[0], y = sim_spectra[len1:len1+len2], row = 4, col = 1, showlegend = False, line = dict(color = "orange"))
     sim_compare.add_scatter(x = dodecaneH_tolueneD_spectra[0], y = sim_spectra[len1+len2:], row = 5, col = 1, showlegend = False, line = dict(color = "green"))
 
-    sim_compare.update_xaxes(range = [47e6, 53e6])
+    sim_compare.update_xaxes(range = [-5e6, 5e6])
     sim_compare.update_layout(template = "simple_white", height = 700)
     sim_compare.show()
     return
@@ -415,12 +429,135 @@ def _(
 ):
     reload(pp)
 
+
     # VALUES for parameters that are not fit
     len1 = len(dodecaneH_tolueneH_spectra[0])
     len2 = len(dodecaneD_tolueneH_spectra[0])
 
-    H_np = [[1.5e-9],[1.0]] # bin center in m, frequency
-    D_np = [[1.5e-9],[1.0]] # bin center in m, frequency
+    #H_np = [[2.87e-9/2],[1.0]] # bin center in m, frequency
+    #D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
+
+    H_np = [
+        np.array([1.272975688,
+    1.405767063,
+    1.538558438,
+    1.671349814,
+    1.804141189,
+    1.936932564,
+    2.06972394,
+    2.202515315, 
+    2.33530669, 
+    2.468098066, 
+    2.600889441, 
+    2.733680816, 
+    2.866472192, 
+    2.999263567, 
+    3.132054942, 
+    3.264846318, 
+    3.397637693, 
+    3.530429068, 
+    3.663220444, 
+    3.796011819, 
+    3.928803194, 
+    4.06159457, 
+    4.194385945, 
+    4.32717732, 
+    4.459968696, 
+    4.592760071, 
+    4.725551446, 
+    4.858342822, 
+    4.991134197, 
+    5.123925572, 
+    5.256716947, 
+    5.389508323, 
+    5.522299698, 
+    5.655091073, 
+    5.787882449, 
+    5.920673824, 
+    6.053465199, 
+    6.186256575,])*1e-9/2,
+        [4, 
+    1, 
+    2, 
+    1, 
+    0, 
+    4, 
+    1, 
+    11, 
+    17, 
+    49, 
+    82, 
+    83, 
+    81, 
+    59, 
+    55, 
+    36, 
+    29, 
+    20, 
+    25, 
+    8, 
+    3, 
+    6, 
+    10, 
+    5, 
+    1, 
+    1, 
+    2, 
+    0, 
+    1, 
+    0, 
+    0, 
+    0, 
+    0, 
+    0, 
+    0, 
+    0, 
+    0, 
+    1,]
+    ]
+
+    D_np = [
+        np.array([1.541959469,
+    1.728658408,
+    1.915357347,
+    2.102056286,
+    2.288755225,
+    2.475454163,
+    2.662153102,
+    2.848852041,
+    3.03555098,
+    3.222249919,
+    3.408948858,
+    3.595647796,
+    3.782346735,
+    3.969045674,
+    4.155744613,
+    4.342443552,
+    4.52914249,
+    4.715841429,
+    4.902540368,
+    5.089239307,])*1e-9/2,
+        [14,
+    32,
+    65,
+    55,
+    61,
+    67,
+    46,
+    40,
+    26,
+    21,
+    11,
+    6,
+    8,
+    1,
+    2,
+    2,
+    0,
+    0,
+    0,
+    1,]
+    ]#
 
     solvent_density_obj = hd_toluene_profile
     rho_bulk_solvent = 4.528e28 # number of hydrogens per cubic m (used to be cubic angstrom)
@@ -446,7 +583,7 @@ def _(
     c2_guess = np.mean(dodecaneD_tolueneH_spectra[1][0:10])
     c3_guess = np.mean(dodecaneH_tolueneD_spectra[1][0:10])
 
-    nu_n_guess = 50e6 # units = s
+    nu_n_guess = 0  # this is for centered spectra, but if not, use 50e6 # units = s
 
     I_scale_guess = 5 # unitless
 
@@ -456,13 +593,14 @@ def _(
 
     dipolar_scale_guess = 1 # unitless
     contact_scale_guess = 1 # unitless
+    blindspot_offset_guess = 0.05 # unitless, bounds should be 0 to 1
+    dipolar_np_scale_guess = 1/1.04
 
     eta_guess = 0 # unitless
     width_scale_guess = 0.8 # unitless
 
 
     print(dodecaneH_tolueneH_spectra[0][1] - dodecaneH_tolueneH_spectra[0][0])
-
     return (
         D_np,
         H_np,
@@ -472,10 +610,12 @@ def _(
         I_scale_guess,
         R_max_guess,
         T_m,
+        blindspot_offset_guess,
         c1_guess,
         c2_guess,
         c3_guess,
         contact_scale_guess,
+        dipolar_np_scale_guess,
         dipolar_scale_guess,
         ell_guess,
         eta_guess,
@@ -507,10 +647,12 @@ def fitting(
     R_max_guess,
     R_np_md,
     T_m,
+    blindspot_offset_guess,
     c1_guess,
     c2_guess,
     c3_guess,
     contact_scale_guess,
+    dipolar_np_scale_guess,
     dipolar_scale_guess,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
@@ -581,7 +723,9 @@ def fitting(
         ('R_max', R_max_guess, True, 0, None), # bring in as nm
 
         ('dipolar_scale', dipolar_scale_guess, False, 0, None),
-        ('contact_scale', contact_scale_guess, False, 0, None),    
+        ('contact_scale', contact_scale_guess, False, 0, None),  
+        ('blindspot_offset', blindspot_offset_guess, True, 0, 1), 
+        ('dipolar_np_scale', dipolar_np_scale_guess, True, 0, None), 
         ("eta", eta_guess, False, 0, None),
         ("width_scale", width_scale_guess, True, 0, None),
         ) 
@@ -599,7 +743,7 @@ def fitting(
         np.concatenate([dodecaneH_tolueneH_spectra[1], dodecaneD_tolueneH_spectra[1], dodecaneH_tolueneD_spectra[1]]), 
         xs = np.concatenate([dodecaneH_tolueneH_spectra[0], dodecaneD_tolueneH_spectra[0], dodecaneH_tolueneD_spectra[0]]),
         params = triple_spectra_model_params, 
-    
+
         len1 = len1, 
         len2 = len2,   
         H_np = H_np, 
@@ -617,7 +761,6 @@ def fitting(
         shape = shape,
         iter_cb=my_callback
     )
-
     return (triple_spetra_fit,)
 
 
@@ -626,7 +769,6 @@ def _(triple_spetra_fit):
     # fit report
 
     print(triple_spetra_fit.fit_report())
-
     return
 
 
@@ -647,12 +789,12 @@ def _(
     fitplot.update_layout(template = "simple_white", width = 500, height = 500)
 
     fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneH_tolueneH_spectra[1], line = dict(color = "#ffabff", width = 5), showlegend = False, col = 1, row = 1)
-    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black"), showlegend = False, col = 1, row = 1)
+    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black"), showlegend = False, col = 1, row = 1)
 
-    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneD_tolueneH_spectra[1], line = dict(color = "#ffabac", width = 5), showlegend = False, col = 1, row = 2)
+    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= dodecaneD_tolueneH_spectra[1], line = dict(color = "#ffabac", width = 5), showlegend = False, col = 1, row = 2)
     fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "black"), showlegend = False, col = 1, row = 2)
 
-    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneH_tolueneD_spectra[1], line = dict(color = "#ababff", width = 5), showlegend = False, col = 1, row = 3)
+    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= dodecaneH_tolueneD_spectra[1], line = dict(color = "#ababff", width = 5), showlegend = False, col = 1, row = 3)
     fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "black"), showlegend = False, col = 1, row = 3)
 
     #add normalized spectra
@@ -667,15 +809,34 @@ def _(
 
 
 @app.cell
-def _(np, qp):
-    #TESTING
+def _(
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    len1,
+    len2,
+    make_subplots,
+    np,
+    triple_spetra_fit,
+):
+    # writing a fit report as a record. 
+    report_plot = make_subplots(rows = 3, cols = 1, subplot_titles= ["solvent-H + ligand-H", "solvent-H + ligand-D", "solvent-D + ligand-H"])
+    report_plot.update_layout(template = "simple_white", width = 500, height = 500)
 
-    #visualizing the blindplot
-    x = np.linspace(-5e6, 5e6, 10000)
-    intensity = (1 - np.cos(2 * np.pi * x * 140e-9))
+    report_plot.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= dodecaneH_tolueneH_spectra[1], line = dict(color = "#ffabff", width = 5), showlegend = False, col = 1, row = 1)
+    report_plot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black"), showlegend = False, col = 1, row = 1)
 
-    qp.quickScatter(x = x, y = intensity)
-    qp.quickScatter(x = x, y = 0.5* np.sin(2*np.pi*x/2*140e-9)**2)
+    report_plot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= dodecaneD_tolueneH_spectra[1], line = dict(color = "#ffabac", width = 5), showlegend = False, col = 1, row = 2)
+    report_plot.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "black"), showlegend = False, col = 1, row = 2)
+
+    report_plot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= dodecaneH_tolueneD_spectra[1], line = dict(color = "#ababff", width = 5), showlegend = False, col = 1, row = 3)
+    report_plot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "black"), showlegend = False, col = 1, row = 3)
+
+    report_plot.add_annotation(text = f"{triple_spetra_fit.fit_report()}", showarrow = False, font = dict( color = "rgba(255, 255, 255,0)"), x = 0, y = np.mean(dodecaneH_tolueneH_spectra[1]))
+
+    report_plot.update_xaxes(title = "frequency /Hz", row = 3, col = 1)
+    report_plot.show()
+    report_plot.write_html("high density all sizes.html")
 
     return
 

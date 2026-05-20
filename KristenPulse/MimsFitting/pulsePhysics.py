@@ -7,6 +7,7 @@ beta_e = sc.physical_constants["Bohr magneton"][0]            # J T^-1
 beta_n = sc.physical_constants["nuclear magneton"][0]         # J T^-1
 Planck = sc.physical_constants["Planck constant"][0]          # J s
 
+
 def simulate_nanoparticle_mims_spectrum( # this function will return the y-values of a mims spectrum
     freq_axis, # the x-axis in the Mims spectrum
 
@@ -28,12 +29,14 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     tau, # s, the delay time of the Mims pulse sequence <- used to calcluate blind splot
     T_m, # s, the dephasing time for the metallic electron
 
-    #properties of the simulation
+    #properties of the spectral simulation
     R_np_md, # m, radius of the nanoparticle in the simulation
     R_max, # m; how far out to look for hydrogens when simulating
     target_dr = 0.2e-10, # m; the target thickness of the various shells
     dipolar_scale = 1, # float, scale for the relative importance of dipolar coupling.  Set to 0 to turn off coupling mechanism
     contact_scale = 1, # float, scale for the relative importance of contact coupling.  Set to 0 to turn off coupling mechanism
+    blindspot_offset = 0, # float, between 0 and 1, accounts for imperfect blindspot, so ajusts intensity, rasiing the minima from zero
+    dipolar_np_scale = 1, # adjusts the distance from the nanoparticle surface that dipolar coupling occurs at
 
     # properties of the spectrum
     shape = "Lorentzian", # handles what line shape to use, will be either Gaussian, Lorentzian, or Voight
@@ -48,9 +51,9 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     """
 
     # correct units...
-    ell = ell *1e-9
+    ell = ell*1e-9
     R_max= R_max*1e-9
-    
+
 
     # print(freq_axis)
     # --- 1. SHELL DEFINITION ---
@@ -105,7 +108,7 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
 
         
         #A_dipolar = (79.0 * (g_e / 2.0023)) / (r**3) 
-        A_dipolar = (4*np.pi)**-1*common_scalar*((r-R_np_exp/1.06)**-3)*(3 * cos_theta**2 - 1) # 1.05 array, Hz; coupling constant
+        A_dipolar = (4*np.pi)**-1*common_scalar*((r-R_np_exp*dipolar_np_scale)**-3)*(3 * cos_theta**2 - 1) # 1.05 array, Hz; coupling constant
 
         A_dipolar = dipolar_scale * A_dipolar
 
@@ -124,7 +127,7 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
         # print(f"coupling constant = {A}")
 
         # Mims Filter & Base Weighting
-        intensity = (1 - np.cos(2 * np.pi * A * tau)) * damping + 0.03 # array.  Calculate the blindspot, based on distance from resonance (A).
+        intensity = ((1 - blindspot_offset) - np.cos(2 * np.pi * A * tau)) * damping + blindspot_offset # array.  Calculate the blindspot, based on distance from resonance (A).
         w = (rho * 4 * np.pi * r**2 * dr / len(cos_theta)) * intensity # scalar, unitless. accounts for number of protons in the shell
 
         # calculate the resonance conditions
