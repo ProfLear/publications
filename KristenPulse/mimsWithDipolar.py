@@ -98,11 +98,11 @@ def _(
     solventOnly,
 ):
     # import spectral data
-    dodecaneH_tolueneH_spectra =  np.genfromtxt("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/KristenPulse/MIMS/PdSC12_Tol MIMS tau140 11730G 10K 9.466690 Q250207_03.csv", delimiter="," ,unpack = True, skip_header = 1)
+    dodecaneH_tolueneH_spectra =  np.genfromtxt("//Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/PdSC12_Tol MIMS tau140 11730G 10K 9.466690 Q250207_03.csv", delimiter="," ,unpack = True, skip_header = 1)
 
-    dodecaneD_tolueneH_spectra = np.genfromtxt("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/KristenPulse/MIMS/dPdSC12_Tol MIMS tau140 11729G 10K 9.517308 Q250325_04_export.csv", delimiter="," ,unpack = True, skip_header = 1)
+    dodecaneD_tolueneH_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/dPdSC12_Tol MIMS tau140 11729G 10K 9.517308 Q250325_04_export.csv", delimiter="," ,unpack = True, skip_header = 1)
 
-    dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/KristenPulse/MIMS/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter="," ,unpack = True, skip_header = 1)
+    dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter="," ,unpack = True, skip_header = 1)
 
     spectra_Plot = make_subplots(rows = 3, cols = 1)
     spectra_Plot.update_layout(template = "simple_white")
@@ -155,7 +155,7 @@ def _(R_np, bulk_toluene_density, make_subplots, mf, np, reload):
     # first, let us process the md data. 
 
     # start with solvent from MD
-    hd_toluene_distances = np.genfromtxt("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/KristenPulse/MDSimulationResults/toluene_distances_high_density.csv",
+    hd_toluene_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/toluene_distances_high_density.csv",
                                        delimiter = ",")
     hd_toluene_profile = mf.NPDensityProfile(hd_toluene_distances, R_np, bin_width=0.1)
 
@@ -166,7 +166,7 @@ def _(R_np, bulk_toluene_density, make_subplots, mf, np, reload):
 
     # then get ligands
 
-    hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
+    hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
                                        delimiter = ",")
 
     #set up profile to have the same bins as the solvent
@@ -367,7 +367,7 @@ def _():
     bulk_toluene_density = 0.0453 # number of hydrogens per cubic angstrom
     bulk_dodecanethiol_density = 0 # the density of hydrogens coming from the ligand at r = infinity
     g_iso = 1.9 # g-value for the nanoparticles
-    eta = 22 # refects the heterogeneity. value of 0 means no effect
+    eta = 22 # was 22 # refects the heterogeneity. value of 0 means no effect
 
     # to be fit
     nu_n = 50 # the frequency of the hydrogens
