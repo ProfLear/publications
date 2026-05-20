@@ -178,10 +178,6 @@ def _(np, pp):
         eta = 0,
         width_scale = 1,
         ):
-        # correct units
-        I1 = I1*1e6
-        I2 = I2*1e6
-        I3 = I3*1e6
 
 
         # should sigma vary by sample? Or T_M?
@@ -210,53 +206,53 @@ def _(np, pp):
             sample_total_raw = np.zeros_like(freq)
 
             # Integrate across the entire nanoparticle size distribution
-            for r, weight_d in zip(rs[0], rs[1]): # unpack the rs  
+            for r, weight_r in zip(rs[0], rs[1]): # unpack the rs  
+                if weight_r > 0: # only need to calculate if there are nanoparticles of this size
+                    # Optimization: Only calculate solvent if it actually contributes
+                    #print(f"r = {r}")
+                    if s_weight > 0.0:
+                        #print("calculating solvent")
+                        y_solvent = pp.simulate_nanoparticle_mims_spectrum(
+                            freq, 
+    
+                            r, 
+    
+                            solvent_density_obj, 
+                            rho_bulk_solvent, 
+                            nu_n, 
+                            g_n, 
+    
+                            I_scale, 
+                            ell, 
+                            g_e, 
+    
+                            tau, 
+                            T_m, 
+    
+                            R_np_md, 
+                            R_max, 
+                            target_dr, 
+                            dipolar_scale, 
+                            contact_scale, #contact_scale, # set to 0 to turn off for solvent. 
+                            blindspot_offset,
+                            dipolar_np_scale,
+    
+                            shape, 
+                            eta, 
+                            width_scale
+                            )
+                    else:
+                        y_solvent = np.zeros_like(freq)
+    
+                    # Optimization: Only calculate ligand if it actually contributes
+                    if l_weight > 0.00:
+                        #print("calculating ligand")
+                        y_ligand = pp.simulate_nanoparticle_mims_spectrum(freq, r, ligand_density_obj, rho_bulk_ligand, nu_n, g_n, I_scale, ell, g_e, tau, T_m, R_np_md, R_max, target_dr, dipolar_scale, contact_scale, blindspot_offset, dipolar_np_scale, shape, eta, width_scale)
+                    else:
+                        y_ligand = np.zeros_like(freq)
 
-                # Optimization: Only calculate solvent if it actually contributes
-                #print(f"r = {r}")
-                if s_weight > 0.0:
-                    #print("calculating solvent")
-                    y_solvent = pp.simulate_nanoparticle_mims_spectrum(
-                        freq, 
-
-                        r, 
-
-                        solvent_density_obj, 
-                        rho_bulk_solvent, 
-                        nu_n, 
-                        g_n, 
-
-                        I_scale, 
-                        ell, 
-                        g_e, 
-
-                        tau, 
-                        T_m, 
-
-                        R_np_md, 
-                        R_max, 
-                        target_dr, 
-                        dipolar_scale, 
-                        contact_scale, #contact_scale, # set to 0 to turn off for solvent. 
-                        blindspot_offset,
-                        dipolar_np_scale,
-
-                        shape, 
-                        eta, 
-                        width_scale
-                        )
-                else:
-                    y_solvent = np.zeros_like(freq)
-
-                # Optimization: Only calculate ligand if it actually contributes
-                if l_weight > 0.00:
-                    #print("calculating ligand")
-                    y_ligand = pp.simulate_nanoparticle_mims_spectrum(freq, r, ligand_density_obj, rho_bulk_ligand, nu_n, g_n, I_scale, ell, g_e, tau, T_m, R_np_md, R_max, target_dr, dipolar_scale, contact_scale, blindspot_offset, dipolar_np_scale, shape, eta, width_scale)
-                else:
-                    y_ligand = np.zeros_like(freq)
-
-                # ACCUMULATE: Add this size bin's weighted contribution to the total
-                sample_total_raw += weight_d * (s_weight * y_solvent + l_weight * y_ligand)
+                    # ACCUMULATE: Add this size bin's weighted contribution to the total
+                    sample_total_raw += weight_r * (s_weight * y_solvent + l_weight * y_ligand)
 
             # Store the unnormalized integrated spectrum for this sample
             all_raw_samples.append(sample_total_raw)
@@ -365,7 +361,6 @@ def _(
         eta_guess,
         width_scale_guess,
         )
-
     return (sim_spectra,)
 
 
@@ -434,130 +429,16 @@ def _(
     len1 = len(dodecaneH_tolueneH_spectra[0])
     len2 = len(dodecaneD_tolueneH_spectra[0])
 
-    #H_np = [[2.87e-9/2],[1.0]] # bin center in m, frequency
-    #D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
+    # set up the experimental sizes. all_sizes is a flag to use distributions, rather than mean sizes
+    all_sizes = False
+    if all_sizes:
+        H_np = [np.array([1.272975688, 1.405767063, 1.538558438, 1.671349814, 1.804141189, 1.936932564, 2.06972394, 2.202515315, 2.33530669, 2.468098066, 2.600889441, 2.733680816, 2.866472192, 2.999263567, 3.132054942, 3.264846318, 3.397637693, 3.530429068, 3.663220444, 3.796011819, 3.928803194, 4.06159457, 4.194385945, 4.32717732, 4.459968696, 4.592760071, 4.725551446, 4.858342822, 4.991134197, 5.123925572, 5.256716947, 5.389508323, 5.522299698, 5.655091073, 5.787882449, 5.920673824, 6.053465199, 6.186256575,])*1e-9/2, [4, 1, 2, 1, 0, 4, 1, 11, 17, 49, 82, 83, 81, 59, 55, 36, 29, 20, 25, 8, 3, 6, 10, 5, 1, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,]]
+        D_np = [np.array([1.541959469, 1.728658408, 1.915357347, 2.102056286, 2.288755225, 2.475454163, 2.662153102, 2.848852041, 3.03555098, 3.222249919, 3.408948858, 3.595647796, 3.782346735, 3.969045674, 4.155744613, 4.342443552, 4.52914249, 4.715841429, 4.902540368, 5.089239307,])*1e-9/2, [14, 32, 65, 55, 61, 67, 46, 40, 26, 21, 11, 6, 8, 1, 2, 2, 0, 0, 0, 1,]]#
+    else: 
+        H_np = [[2.87e-9/2],[1.0]] # bin center in m, frequency
+        D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
 
-    H_np = [
-        np.array([1.272975688,
-    1.405767063,
-    1.538558438,
-    1.671349814,
-    1.804141189,
-    1.936932564,
-    2.06972394,
-    2.202515315, 
-    2.33530669, 
-    2.468098066, 
-    2.600889441, 
-    2.733680816, 
-    2.866472192, 
-    2.999263567, 
-    3.132054942, 
-    3.264846318, 
-    3.397637693, 
-    3.530429068, 
-    3.663220444, 
-    3.796011819, 
-    3.928803194, 
-    4.06159457, 
-    4.194385945, 
-    4.32717732, 
-    4.459968696, 
-    4.592760071, 
-    4.725551446, 
-    4.858342822, 
-    4.991134197, 
-    5.123925572, 
-    5.256716947, 
-    5.389508323, 
-    5.522299698, 
-    5.655091073, 
-    5.787882449, 
-    5.920673824, 
-    6.053465199, 
-    6.186256575,])*1e-9/2,
-        [4, 
-    1, 
-    2, 
-    1, 
-    0, 
-    4, 
-    1, 
-    11, 
-    17, 
-    49, 
-    82, 
-    83, 
-    81, 
-    59, 
-    55, 
-    36, 
-    29, 
-    20, 
-    25, 
-    8, 
-    3, 
-    6, 
-    10, 
-    5, 
-    1, 
-    1, 
-    2, 
-    0, 
-    1, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
-    0, 
-    1,]
-    ]
 
-    D_np = [
-        np.array([1.541959469,
-    1.728658408,
-    1.915357347,
-    2.102056286,
-    2.288755225,
-    2.475454163,
-    2.662153102,
-    2.848852041,
-    3.03555098,
-    3.222249919,
-    3.408948858,
-    3.595647796,
-    3.782346735,
-    3.969045674,
-    4.155744613,
-    4.342443552,
-    4.52914249,
-    4.715841429,
-    4.902540368,
-    5.089239307,])*1e-9/2,
-        [14,
-    32,
-    65,
-    55,
-    61,
-    67,
-    46,
-    40,
-    26,
-    21,
-    11,
-    6,
-    8,
-    1,
-    2,
-    2,
-    0,
-    0,
-    0,
-    1,]
-    ]#
 
     solvent_density_obj = hd_toluene_profile
     rho_bulk_solvent = 4.528e28 # number of hydrogens per cubic m (used to be cubic angstrom)
@@ -575,9 +456,9 @@ def _(
     shape = "L"
 
     # GUESSES for parameters to be fit
-    I1_guess = (np.max(dodecaneH_tolueneH_spectra[1]) - np.min(dodecaneH_tolueneH_spectra[1]))*1e-6
-    I2_guess = (np.max(dodecaneD_tolueneH_spectra[1]) - np.min(dodecaneD_tolueneH_spectra[1]))*1e-6
-    I3_guess = (np.max(dodecaneH_tolueneD_spectra[1]) - np.min(dodecaneH_tolueneD_spectra[1]))*1e-6
+    I1_guess = (np.max(dodecaneH_tolueneH_spectra[1]) - np.min(dodecaneH_tolueneH_spectra[1]))
+    I2_guess = (np.max(dodecaneD_tolueneH_spectra[1]) - np.min(dodecaneD_tolueneH_spectra[1]))
+    I3_guess = (np.max(dodecaneH_tolueneD_spectra[1]) - np.min(dodecaneH_tolueneD_spectra[1]))
 
     c1_guess = np.mean(dodecaneH_tolueneH_spectra[1][0:10])
     c2_guess = np.mean(dodecaneD_tolueneH_spectra[1][0:10])
@@ -587,9 +468,9 @@ def _(
 
     I_scale_guess = 5 # unitless
 
-    ell_guess = 0.7 #e-9 # unit = m the decay constant for wavefunction
+    ell_guess = 0.7e-9 # unit = m the decay constant for wavefunction
 
-    R_max_guess = 20 #e-9 # m, the max radius we look out to
+    R_max_guess = 20e-9 # m, the max radius we look out to.  Seems like we get good fits, no matter what
 
     dipolar_scale_guess = 1 # unitless
     contact_scale_guess = 1 # unitless
@@ -599,8 +480,6 @@ def _(
     eta_guess = 0 # unitless
     width_scale_guess = 0.8 # unitless
 
-
-    print(dodecaneH_tolueneH_spectra[0][1] - dodecaneH_tolueneH_spectra[0][0])
     return (
         D_np,
         H_np,
@@ -837,7 +716,6 @@ def _(
     report_plot.update_xaxes(title = "frequency /Hz", row = 3, col = 1)
     report_plot.show()
     report_plot.write_html("high density all sizes.html")
-
     return
 
 

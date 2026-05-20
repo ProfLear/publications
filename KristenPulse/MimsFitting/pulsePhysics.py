@@ -51,8 +51,8 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     """
 
     # correct units...
-    ell = ell*1e-9
-    R_max= R_max*1e-9
+    #ell = ell*1e-9
+    #R_max= R_max*1e-9
 
 
     # print(freq_axis)
@@ -127,7 +127,8 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
         # print(f"coupling constant = {A}")
 
         # Mims Filter & Base Weighting
-        intensity = ((1 - blindspot_offset) - np.cos(2 * np.pi * A * tau)) * damping + blindspot_offset # array.  Calculate the blindspot, based on distance from resonance (A).
+        intensity = (1.0-blindspot_offset)*np.sin(2*np.pi*A*tau)**2 + blindspot_offset # if using this, do not need the damping calc
+        #intensity = ((1 - blindspot_offset) - np.cos(2 * np.pi * A * tau)) * damping + blindspot_offset # array.  Calculate the blindspot, based on distance from resonance (A).
         w = (rho * 4 * np.pi * r**2 * dr / len(cos_theta)) * intensity # scalar, unitless. accounts for number of protons in the shell
 
         # calculate the resonance conditions
