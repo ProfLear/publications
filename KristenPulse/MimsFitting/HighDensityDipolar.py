@@ -29,7 +29,7 @@ def _():
 def _(mo):
     mo.md(r"""
     To do:
-    - [ ] Seems like the errors might be floating point number issues, so what if instead of SI units, we change to... nm and ns? Actually, not totally sure what the best units are
+    - [ ] Check to see if contact coupling is needed at all?
     """)
     return
 
@@ -54,6 +54,35 @@ def _(make_subplots, np):
     dodecaneD_tolueneH_spectra[0] = (dodecaneD_tolueneH_spectra[0] - field_2 * nu_G)*1e6
     dodecaneH_tolueneD_spectra[0] = (dodecaneH_tolueneD_spectra[0] - field_1 * nu_G)*1e6
 
+    # baseline correct and normalize...
+    normalize = True
+    if normalize:
+        dodecaneH_tolueneH_spectra[1] = (dodecaneH_tolueneH_spectra[1] - np.mean(dodecaneH_tolueneH_spectra[1][:10]))/np.max((dodecaneH_tolueneH_spectra[1] - np.mean(dodecaneH_tolueneH_spectra[1][:10])))
+    
+        dodecaneD_tolueneH_spectra[1] = (dodecaneD_tolueneH_spectra[1] - np.mean(dodecaneD_tolueneH_spectra[1][:10]))/np.max((dodecaneD_tolueneH_spectra[1] - np.mean(dodecaneD_tolueneH_spectra[1][:10])))
+    
+        dodecaneH_tolueneD_spectra[1] = (dodecaneH_tolueneD_spectra[1] - np.mean(dodecaneH_tolueneD_spectra[1][:10]))/np.max((dodecaneH_tolueneD_spectra[1] - np.mean(dodecaneH_tolueneD_spectra[1][:10])))
+
+    # can also crop out x-values...
+    mask_limit = 5e6
+    mask_data = True
+    if mask_data:
+        mask = (dodecaneH_tolueneH_spectra[0] >= -mask_limit) & (dodecaneH_tolueneH_spectra[0] <= mask_limit)
+        dodecaneH_tolueneH_spectra[0] = dodecaneH_tolueneH_spectra[0][mask]
+        dodecaneH_tolueneH_spectra[1] = dodecaneH_tolueneH_spectra[1][mask]
+    
+        mask = (dodecaneD_tolueneH_spectra[0] >= -mask_limit) & (dodecaneD_tolueneH_spectra[0] <= mask_limit)
+        dodecaneD_tolueneH_spectra[0] = dodecaneD_tolueneH_spectra[0][mask]
+        dodecaneD_tolueneH_spectra[1] = dodecaneD_tolueneH_spectra[1][mask]
+    
+        mask = (dodecaneH_tolueneD_spectra[0] >= -mask_limit) & (dodecaneH_tolueneD_spectra[0] <= mask_limit)
+        dodecaneH_tolueneD_spectra[0] = dodecaneH_tolueneD_spectra[0][mask]
+        dodecaneH_tolueneD_spectra[1] = dodecaneH_tolueneD_spectra[1][mask]
+
+
+
+    # then when we fit, we can just use c and I of 1
+
 
     expPlot = make_subplots(rows = 3, cols = 1)
     for _i, _spectrum in enumerate([dodecaneH_tolueneH_spectra, dodecaneD_tolueneH_spectra, dodecaneH_tolueneD_spectra], start = 1):
@@ -76,7 +105,18 @@ def _(np):
                                        delimiter = ",")*1e-10 # convert to m
     hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
                                        delimiter = ",")*1e-10 # convert to m
-    return hd_dodecanethiol_distances, hd_toluene_distances
+
+    # low density files
+    ld_toluene_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/toluene_distances_low_density.csv",
+                                       delimiter = ",")*1e-10 # convert to m
+    ld_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_low_density.csv",
+                                       delimiter = ",")*1e-10 # convert to m
+    return (
+        hd_dodecanethiol_distances,
+        hd_toluene_distances,
+        ld_dodecanethiol_distances,
+        ld_toluene_distances,
+    )
 
 
 @app.cell
@@ -101,6 +141,8 @@ def _(
     bulk_toluene_density,
     hd_dodecanethiol_distances,
     hd_toluene_distances,
+    ld_dodecanethiol_distances,
+    ld_toluene_distances,
     make_subplots,
     md_r_step,
     mh,
@@ -108,6 +150,7 @@ def _(
 ):
     # process md data files
 
+    # high density
     #toluene
     hd_toluene_profile = mh.NPDensityProfile(hd_toluene_distances, R_np_md, bin_width=md_r_step)
     hd_toluene_profile.prepare_blended_density(rho_bulk = bulk_toluene_density)
@@ -116,7 +159,16 @@ def _(
     hd_dodecanethiol_profile = mh.NPDensityProfile(hd_dodecanethiol_distances, R_np_md, old_bins = hd_toluene_profile.bin_centers)
 
 
-    densityPLot  = make_subplots()
+    #low density
+    #toluene
+    ld_toluene_profile = mh.NPDensityProfile(ld_toluene_distances, R_np_md, bin_width=md_r_step)
+    ld_toluene_profile.prepare_blended_density(rho_bulk = bulk_toluene_density)
+
+    #ligand
+    ld_dodecanethiol_profile = mh.NPDensityProfile(ld_dodecanethiol_distances, R_np_md, old_bins = ld_toluene_profile.bin_centers)
+
+
+    densityPLot  = make_subplots(rows =2 , cols = 1)
 
     densityPLot.add_scatter(x = np.array(hd_dodecanethiol_profile.bin_centers), y = hd_dodecanethiol_profile.densities, 
                                   line = dict(color = "#BB6F35"), fill = "tozeroy", name = "ligand")
@@ -124,13 +176,23 @@ def _(
                            line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent")
     #densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)/10, y = hd_toluene_profile.densities+hd_dodecanethiol_profile.densities, line = dict(color = "#94A2B1"))
 
+    densityPLot.add_scatter(x = np.array(ld_dodecanethiol_profile.bin_centers), y = ld_dodecanethiol_profile.densities, 
+                                  line = dict(color = "#BB6F35"), fill = "tozeroy", name = "ligand", row = 2, col = 1)
+    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers), y = ld_toluene_profile.densities, 
+                           line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent", row = 2, col = 1)
+
     densityPLot.update_layout(template = "simple_white",
                               #showlegend = False, 
                               width = 300*2, height = 300*1.4)
     densityPLot.update_xaxes(range = [0, 34e-10], title = "radial distance /nm")
     densityPLot.update_yaxes(title = "H density")
     densityPLot.show()
-    return hd_dodecanethiol_profile, hd_toluene_profile
+    return (
+        hd_dodecanethiol_profile,
+        hd_toluene_profile,
+        ld_dodecanethiol_profile,
+        ld_toluene_profile,
+    )
 
 
 @app.cell
@@ -418,6 +480,8 @@ def _(
     dodecaneH_tolueneH_spectra,
     hd_dodecanethiol_profile,
     hd_toluene_profile,
+    ld_dodecanethiol_profile,
+    ld_toluene_profile,
     np,
     pp,
     reload,
@@ -430,7 +494,7 @@ def _(
     len2 = len(dodecaneD_tolueneH_spectra[0])
 
     # set up the experimental sizes. all_sizes is a flag to use distributions, rather than mean sizes
-    all_sizes = False
+    all_sizes = True
     if all_sizes:
         H_np = [np.array([1.272975688, 1.405767063, 1.538558438, 1.671349814, 1.804141189, 1.936932564, 2.06972394, 2.202515315, 2.33530669, 2.468098066, 2.600889441, 2.733680816, 2.866472192, 2.999263567, 3.132054942, 3.264846318, 3.397637693, 3.530429068, 3.663220444, 3.796011819, 3.928803194, 4.06159457, 4.194385945, 4.32717732, 4.459968696, 4.592760071, 4.725551446, 4.858342822, 4.991134197, 5.123925572, 5.256716947, 5.389508323, 5.522299698, 5.655091073, 5.787882449, 5.920673824, 6.053465199, 6.186256575,])*1e-9/2, [4, 1, 2, 1, 0, 4, 1, 11, 17, 49, 82, 83, 81, 59, 55, 36, 29, 20, 25, 8, 3, 6, 10, 5, 1, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,]]
         D_np = [np.array([1.541959469, 1.728658408, 1.915357347, 2.102056286, 2.288755225, 2.475454163, 2.662153102, 2.848852041, 3.03555098, 3.222249919, 3.408948858, 3.595647796, 3.782346735, 3.969045674, 4.155744613, 4.342443552, 4.52914249, 4.715841429, 4.902540368, 5.089239307,])*1e-9/2, [14, 32, 65, 55, 61, 67, 46, 40, 26, 21, 11, 6, 8, 1, 2, 2, 0, 0, 0, 1,]]#
@@ -439,11 +503,17 @@ def _(
         D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
 
 
+    density_choice = "LD"
+    if density_choice == "HD":
+        solvent_density_obj = hd_toluene_profile
+        ligand_density_obj = hd_dodecanethiol_profile
+    if density_choice == "LD": 
+        solvent_density_obj = ld_toluene_profile
+        ligand_density_obj = ld_dodecanethiol_profile
 
-    solvent_density_obj = hd_toluene_profile
     rho_bulk_solvent = 4.528e28 # number of hydrogens per cubic m (used to be cubic angstrom)
-    ligand_density_obj = hd_dodecanethiol_profile
     rho_bulk_ligand = 0
+  
     g_n = 5.5856946893 # from scipy constants
 
     g_e = 2.0 # g-value for the nanoparticles
@@ -456,29 +526,39 @@ def _(
     shape = "L"
 
     # GUESSES for parameters to be fit
-    I1_guess = (np.max(dodecaneH_tolueneH_spectra[1]) - np.min(dodecaneH_tolueneH_spectra[1]))
-    I2_guess = (np.max(dodecaneD_tolueneH_spectra[1]) - np.min(dodecaneD_tolueneH_spectra[1]))
-    I3_guess = (np.max(dodecaneH_tolueneD_spectra[1]) - np.min(dodecaneH_tolueneD_spectra[1]))
-
-    c1_guess = np.mean(dodecaneH_tolueneH_spectra[1][0:10])
-    c2_guess = np.mean(dodecaneD_tolueneH_spectra[1][0:10])
-    c3_guess = np.mean(dodecaneH_tolueneD_spectra[1][0:10])
+    norm = True # set equal to true, if the spectra have been purposefully normalized
+    if norm:
+        I1_guess = 1
+        I2_guess = 1
+        I3_guess = 1
+        c1_guess = 0
+        c2_guess = 0
+        c3_guess = 0
+    else:
+        I1_guess = (np.max(dodecaneH_tolueneH_spectra[1]) - np.min(dodecaneH_tolueneH_spectra[1]))
+        I2_guess = (np.max(dodecaneD_tolueneH_spectra[1]) - np.min(dodecaneD_tolueneH_spectra[1]))
+        I3_guess = (np.max(dodecaneH_tolueneD_spectra[1]) - np.min(dodecaneH_tolueneD_spectra[1]))
+    
+        c1_guess = np.mean(dodecaneH_tolueneH_spectra[1][0:10])
+        c2_guess = np.mean(dodecaneD_tolueneH_spectra[1][0:10])
+        c3_guess = np.mean(dodecaneH_tolueneD_spectra[1][0:10])
 
     nu_n_guess = 0  # this is for centered spectra, but if not, use 50e6 # units = s
 
-    I_scale_guess = 5 # unitless
+    I_scale_guess = 13 # unitless, start with a guess that assumes our simple treatment is correct
 
-    ell_guess = 0.7e-9 # unit = m the decay constant for wavefunction
+    ell_guess = 0.5e-9 # unit = m the decay constant for wavefunction. Guess comes from some paper Kirsten read.
 
-    R_max_guess = 20e-9 # m, the max radius we look out to.  Seems like we get good fits, no matter what
+    R_max_guess = 15e-9 # m, the max radius we look out to.  Seems like we get good fits, no matter what
 
     dipolar_scale_guess = 1 # unitless
     contact_scale_guess = 1 # unitless
+
     blindspot_offset_guess = 0.05 # unitless, bounds should be 0 to 1
-    dipolar_np_scale_guess = 1/1.04
+    dipolar_np_scale_guess = 0.685#/1.04
 
     eta_guess = 0 # unitless
-    width_scale_guess = 0.8 # unitless
+    width_scale_guess = 1 # unitless
 
     return (
         D_np,
@@ -526,12 +606,10 @@ def fitting(
     R_max_guess,
     R_np_md,
     T_m,
-    blindspot_offset_guess,
     c1_guess,
     c2_guess,
     c3_guess,
     contact_scale_guess,
-    dipolar_np_scale_guess,
     dipolar_scale_guess,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
@@ -599,12 +677,12 @@ def fitting(
         ("I_scale", I_scale_guess, True, 0, None), 
         ("ell", ell_guess, True, 0, None), # bring in as nm
 
-        ('R_max', R_max_guess, True, 0, None), # bring in as nm
+        ('R_max', R_max_guess, False, R_np_md, None), # bring in as nm
 
         ('dipolar_scale', dipolar_scale_guess, False, 0, None),
         ('contact_scale', contact_scale_guess, False, 0, None),  
-        ('blindspot_offset', blindspot_offset_guess, True, 0, 1), 
-        ('dipolar_np_scale', dipolar_np_scale_guess, True, 0, None), 
+        ('blindspot_offset', 0, True, 0, 1), 
+        ('dipolar_np_scale', 0, False, 0, 1), 
         ("eta", eta_guess, False, 0, None),
         ("width_scale", width_scale_guess, True, 0, None),
         ) 
@@ -682,7 +760,7 @@ def _(
     fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0], y= (triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value)/np.max(triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value), line = dict(color = "black"), showlegend = False, col = 1, row = 4)
 
 
-    fitplot.update_xaxes(title = "frequency /MHz", row = 3, col = 1)
+    fitplot.update_xaxes(title = "frequency /MHz", row = 4, col = 1)
     fitplot.show()
     return
 
@@ -716,6 +794,211 @@ def _(
     report_plot.update_xaxes(title = "frequency /Hz", row = 3, col = 1)
     report_plot.show()
     report_plot.write_html("high density all sizes.html")
+    return
+
+
+@app.cell
+def _(
+    D_np,
+    H_np,
+    R_np_md,
+    T_m,
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    g_e,
+    g_n,
+    len1,
+    len2,
+    ligand_density_obj,
+    np,
+    pp,
+    reload,
+    rho_bulk_ligand,
+    rho_bulk_solvent,
+    shape,
+    solvent_density_obj,
+    target_dr,
+    tau,
+    triple_mims_simulation,
+    triple_spetra_fit,
+):
+    reload(pp)
+
+    contact_only_spectra = triple_mims_simulation(
+        np.concatenate([dodecaneH_tolueneH_spectra[0], dodecaneD_tolueneH_spectra[0], dodecaneH_tolueneD_spectra[0]]),
+        # properties of just the final spectra we are fitting to
+        len1, len2, # to be used for indices
+        triple_spetra_fit.params["I1"].value, triple_spetra_fit.params["I2"].value, triple_spetra_fit.params["I3"].value, # final intensity for each spectra
+        triple_spetra_fit.params["c1"].value, triple_spetra_fit.params["c2"].value, triple_spetra_fit.params["c3"].value, # final background for each spectra
+
+        # properties of the nanoparticles
+        H_np, D_np, # objects containing size info for the protio and duetero ligand protected nanoparticles. This should be paired lists of bin center and frequency.
+
+        # properties of the nuclei
+        solvent_density_obj, rho_bulk_solvent,
+        ligand_density_obj, rho_bulk_ligand,
+        triple_spetra_fit.params["nu_n"].value, # central frequency... if we correct the mims, could be zero
+        g_n, # nuclear g-factor, depends on the atom identity
+
+        # properties of the electron
+        triple_spetra_fit.params["I_scale"].value, # unitless, a scalar that adjust intenisty, but should default to 1.
+        triple_spetra_fit.params["ell"].value, # unit of m, characteristic spatial distance of the decay
+        g_e, # electronic g-factor
+
+        #properties of the EPR experiment
+        tau, # unit = s, delay time of the pulse sequence
+        T_m, # unit = s, coherence lifetime
+
+        # properties of the simulation
+        R_np_md, 
+        triple_spetra_fit.params["R_max"].value, # unit = m, how far out in the simulation to look 
+        target_dr, # unit = m, 
+        0,  #dipolar scale is 0, so contribution to coupling from it  
+        triple_spetra_fit.params["contact_scale"].value, 
+        triple_spetra_fit.params["blindspot_offset"].value, 
+        triple_spetra_fit.params["dipolar_np_scale"].value, 
+
+        # properties of the spectra
+        shape,
+        triple_spetra_fit.params["eta"].value,
+        triple_spetra_fit.params["width_scale"].value,
+        )
+
+    dipolar_only_spectra = triple_mims_simulation(
+        np.concatenate([dodecaneH_tolueneH_spectra[0], dodecaneD_tolueneH_spectra[0], dodecaneH_tolueneD_spectra[0]]),
+        # properties of just the final spectra we are fitting to
+        len1, len2, # to be used for indices
+        triple_spetra_fit.params["I1"].value, triple_spetra_fit.params["I2"].value, triple_spetra_fit.params["I3"].value, # final intensity for each spectra
+        triple_spetra_fit.params["c1"].value, triple_spetra_fit.params["c2"].value, triple_spetra_fit.params["c3"].value, # final background for each spectra
+
+        # properties of the nanoparticles
+        H_np, D_np, # objects containing size info for the protio and duetero ligand protected nanoparticles. This should be paired lists of bin center and frequency.
+
+        # properties of the nuclei
+        solvent_density_obj, rho_bulk_solvent,
+        ligand_density_obj, rho_bulk_ligand,
+        triple_spetra_fit.params["nu_n"].value, # central frequency... if we correct the mims, could be zero
+        g_n, # nuclear g-factor, depends on the atom identity
+
+        # properties of the electron
+        triple_spetra_fit.params["I_scale"].value, # unitless, a scalar that adjust intenisty, but should default to 1.
+        triple_spetra_fit.params["ell"].value, # unit of m, characteristic spatial distance of the decay
+        g_e, # electronic g-factor
+
+        #properties of the EPR experiment
+        tau, # unit = s, delay time of the pulse sequence
+        T_m, # unit = s, coherence lifetime
+
+        # properties of the simulation
+        R_np_md, 
+        triple_spetra_fit.params["R_max"].value, # unit = m, how far out in the simulation to look 
+        target_dr, # unit = m, 
+        triple_spetra_fit.params["dipolar_scale"].value, 
+        0, #contact_scale is 0, so no contribution to coupling from it
+        triple_spetra_fit.params["blindspot_offset"].value, 
+        triple_spetra_fit.params["dipolar_np_scale"].value, 
+
+        # properties of the spectra
+        shape,
+        triple_spetra_fit.params["eta"].value,
+        triple_spetra_fit.params["width_scale"].value,
+        )
+
+
+    from scipy.optimize import nnls
+
+
+    def calibrate_spectra_coefficients(spectra_1, spectra_2, spectra_3):
+        """Calculates the coefficients for spectra 1 and 2 that best reconstruct spectra 3.
+
+        Parameters:
+        -----------
+        spectra_1 : array-like
+            Intensity array of the first component spectrum.
+        spectra_2 : array-like
+            Intensity array of the second component spectrum.
+        spectra_3 : array-like
+            Intensity array of the target/combined spectrum.
+
+        Returns:
+        --------
+        c1 : float
+            Scaling coefficient for spectra 1.
+        c2 : float
+            Scaling coefficient for spectra 2.
+        """
+        # Convert inputs to numpy arrays just in case
+        s1 = np.asarray(spectra_1)
+        s2 = np.asarray(spectra_2)
+        s3 = np.asarray(spectra_3)
+
+        # Stack the component spectra as columns to create the design matrix A
+        # Shape of A will be (number_of_data_points, 2)
+        A = np.column_stack((s1, s2))
+
+        # Solve the linear least squares problem with non-negativity constraints
+        # A * c = s3
+        coefficients, residual = nnls(A, s3)
+
+        c1, c2 = coefficients
+
+        return c1, c2
+    
+    co, do = calibrate_spectra_coefficients(
+        (contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]),
+        (dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]),
+        (triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"])
+    )
+
+    return co, contact_only_spectra, dipolar_only_spectra, do
+
+
+@app.cell
+def _(
+    co,
+    contact_only_spectra,
+    dipolar_only_spectra,
+    do,
+    dodecaneH_tolueneD_spectra,
+    len1,
+    len2,
+    make_subplots,
+    np,
+    triple_spetra_fit,
+):
+    cont_plot = make_subplots()
+
+    cont_plot.add_scatter(
+        x = dodecaneH_tolueneD_spectra[0],
+        y = co*(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]) + do*(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]), line = dict(color = "purple")
+        )
+    cont_plot.add_scatter(
+        x = dodecaneH_tolueneD_spectra[0],
+        y = co*(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]), line = dict(color = "red")
+        )
+    cont_plot.add_scatter(
+        x = dodecaneH_tolueneD_spectra[0],
+        y = do*(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]), line = dict(color = "blue")
+        )
+
+    cont_plot.show()
+    return
+
+
+@app.cell
+def _(make_subplots, np):
+    R_max_plots = make_subplots()
+    R_max_plots.add_scatter(
+        x = [45, 40, 35, 30 , 25, 20 , 15, 10], 
+        y = [9.9e-11, 1.01e-10, 1.43e-10, 1.87e-10, 1.83e-10, 1.22e-10, 9.67e-11, 8.78e-11])
+    R_max_plots.show()
+    print(np.mean([9.9e-11, 1.01e-10, 1.43e-10, 1.87e-10, 1.83e-10, 1.22e-10, 9.67e-11, 8.78e-11]), np.std([9.9e-11, 1.01e-10, 1.43e-10, 1.87e-10, 1.83e-10, 1.22e-10, 9.67e-11, 8.78e-11]))
+    return
+
+
+@app.cell
+def _():
     return
 
 

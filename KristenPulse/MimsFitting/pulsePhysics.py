@@ -87,7 +87,7 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
     #start by doing a few calculations of the things that do not depend on r
 
     common_scalar = mu_0*g_e*beta_e*g_n*beta_n/Planck
-    I0 = np.sqrt(1/(2*np.pi*ell*(R_np_exp**2 + R_np_exp*ell + 0.5*ell**2)))
+    I0 = np.sqrt(1/(2*np.pi*ell*((R_np_exp)**2 + (R_np_exp)*ell + 0.5*ell**2)))
     #print(f"I0 = {I0}")
 
     #print(common_scalar)
@@ -99,16 +99,21 @@ def simulate_nanoparticle_mims_spectrum( # this function will return the y-value
         rho = density_obj.get_density((r - R_np_exp) + R_np_md, rho_bulk) # scalar, m^-3, find the distance from teh NP core, adn then look that far from the simulated one
         #print(rho)
 
-        if rho <= 0 or r < 1.78e-9: continue # if there is no density of nuclei, then we have no need to calculate anything
+        if rho <= 0 or r < (1.78e-9 - R_np_md) + R_np_exp: continue # if there is no density of nuclei, then we have no need to calculate anything. Also, the second one handles the fact there is a spurious solvent very close to the core in the MD
         
         # Physics Calculation
         #A_contact = A0 * np.exp(-(max(0, r - R_np)) / ell)
-        A_contact = 2/3*common_scalar*(I_scale*I0*np.exp(-(r - R_np_exp)/ell))**2# scalar, Hz; coupling constant
+        A_contact = 2/3*common_scalar*(I_scale*I0*np.exp(-(r)/ell))**2# scalar, Hz; coupling constant
         A_contact = contact_scale * A_contact
 
         
-        #A_dipolar = (79.0 * (g_e / 2.0023)) / (r**3) 
-        A_dipolar = (4*np.pi)**-1*common_scalar*((r-R_np_exp*dipolar_np_scale)**-3)*(3 * cos_theta**2 - 1) # 1.05 array, Hz; coupling constant
+        # point diploar with an adjusted shell for the radius
+        #A_dipolar = (4*np.pi)**-1*common_scalar*((r-R_np_exp*dipolar_np_scale)**-3)*(3 * cos_theta**2 - 1) # 1.05 array, Hz; coupling constant
+        
+        # for shell stuff
+        A_dipolar = (4*np.pi)**-1*common_scalar*(r**-3)*(3 * cos_theta**2 - 1) # array, Hz; coupling constant. THe point-source equation
+        F_dipolar = (1-(R_np_exp/r)**2)**-3
+        A_dipolar = A_dipolar*((1-dipolar_np_scale) + dipolar_np_scale*F_dipolar) # multiply the point source by the correction. 
 
         A_dipolar = dipolar_scale * A_dipolar
 
