@@ -22,7 +22,7 @@ def _():
 
     reload(pp)
     reload(mh)
-    return Model, make_subplots, mh, mo, np, pp, reload
+    return Model, go, make_subplots, mh, mo, np, pp, reload
 
 
 @app.cell(hide_code=True)
@@ -68,17 +68,20 @@ def _(make_subplots, np):
     mask_data = True
     if mask_data:
         mask = (dodecaneH_tolueneH_spectra[0] >= -mask_limit) & (dodecaneH_tolueneH_spectra[0] <= mask_limit)
-        dodecaneH_tolueneH_spectra[0] = dodecaneH_tolueneH_spectra[0][mask]
-        dodecaneH_tolueneH_spectra[1] = dodecaneH_tolueneH_spectra[1][mask]
+        trimmed_HH_frequency = dodecaneH_tolueneH_spectra[0][mask]
+        trimmed_HH_intensity = dodecaneH_tolueneH_spectra[1][mask]
     
         mask = (dodecaneD_tolueneH_spectra[0] >= -mask_limit) & (dodecaneD_tolueneH_spectra[0] <= mask_limit)
-        dodecaneD_tolueneH_spectra[0] = dodecaneD_tolueneH_spectra[0][mask]
-        dodecaneD_tolueneH_spectra[1] = dodecaneD_tolueneH_spectra[1][mask]
+        trimmed_DH_frequency = dodecaneD_tolueneH_spectra[0][mask]
+        trimmed_DH_intensity = dodecaneD_tolueneH_spectra[1][mask]
     
         mask = (dodecaneH_tolueneD_spectra[0] >= -mask_limit) & (dodecaneH_tolueneD_spectra[0] <= mask_limit)
-        dodecaneH_tolueneD_spectra[0] = dodecaneH_tolueneD_spectra[0][mask]
-        dodecaneH_tolueneD_spectra[1] = dodecaneH_tolueneD_spectra[1][mask]
+        trimmed_HD_frequency = dodecaneH_tolueneD_spectra[0][mask]
+        trimmed_HD_intensity = dodecaneH_tolueneD_spectra[1][mask]
 
+        dodecaneH_tolueneH_spectra = [trimmed_HH_frequency, trimmed_HH_intensity] 
+        dodecaneD_tolueneH_spectra = [trimmed_DH_frequency, trimmed_DH_intensity]
+        dodecaneH_tolueneD_spectra = [trimmed_HD_frequency, trimmed_HD_intensity]
 
 
     # then when we fit, we can just use c and I of 1
@@ -168,25 +171,43 @@ def _(
     ld_dodecanethiol_profile = mh.NPDensityProfile(ld_dodecanethiol_distances, R_np_md, old_bins = ld_toluene_profile.bin_centers)
 
 
+
+    #
+    # Plot
+    #
     densityPLot  = make_subplots(rows =2 , cols = 1)
 
-    densityPLot.add_scatter(x = np.array(hd_dodecanethiol_profile.bin_centers), y = hd_dodecanethiol_profile.densities, 
-                                  line = dict(color = "#BB6F35"), fill = "tozeroy", name = "ligand")
-    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers), y = hd_toluene_profile.densities, 
-                           line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent")
-    #densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)/10, y = hd_toluene_profile.densities+hd_dodecanethiol_profile.densities, line = dict(color = "#94A2B1"))
+    densityPLot.add_scatter(x = np.array(hd_dodecanethiol_profile.bin_centers)*1e9, y = hd_dodecanethiol_profile.densities/6.022e23*1e-6, 
+                                  line = dict(color = "#BB6F35", width = 0), fill = "tozeroy", name = "ligand", fillcolor="#BB6F35")
 
-    densityPLot.add_scatter(x = np.array(ld_dodecanethiol_profile.bin_centers), y = ld_dodecanethiol_profile.densities, 
-                                  line = dict(color = "#BB6F35"), fill = "tozeroy", name = "ligand", row = 2, col = 1)
-    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers), y = ld_toluene_profile.densities, 
-                           line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent", row = 2, col = 1)
+    #densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers), y = hd_toluene_profile.densities, line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent")
+
+
+    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)*1e9, y = (hd_toluene_profile.densities+hd_dodecanethiol_profile.densities)/6.022e23*1e-6, line = dict(color = "#448CC4"), fill = "tonexty",)# fillcolor="#448CC4")
+
+    densityPLot.add_scatter(x = np.array(hd_toluene_profile.bin_centers)*1e9, y = (hd_toluene_profile.densities+hd_dodecanethiol_profile.densities)/6.022e23*1e-6, line = dict(color = "black"),)# fillcolor="#448CC4")
+
+
+
+
+
+    densityPLot.add_scatter(x = np.array(ld_dodecanethiol_profile.bin_centers)*1e9, y = ld_dodecanethiol_profile.densities//6.022e23*1e-6, 
+                                  line = dict(color = "#BB6F35", width = 0), fill = "tozeroy", fillcolor="#BB6F35", name = "ligand", row = 2, col = 1)
+
+    #densityPLot.add_scatter(x = np.array(ld_toluene_profile.bin_centers), y = ld_toluene_profile.densities, line = dict(color = "#448CC4"), fill = "tozeroy", name = "solvent", row = 2, col = 1)
+
+    densityPLot.add_scatter(x = np.array(ld_toluene_profile.bin_centers)*1e9, y = (ld_dodecanethiol_profile.densities+ld_toluene_profile.densities)/6.022e23*1e-6, line = dict(color = "#448CC4"), fill = "tonexty", row = 2, col = 1)# fillcolor="#448CC4")
+
+    densityPLot.add_scatter(x = np.array(ld_toluene_profile.bin_centers)*1e9, y = (ld_dodecanethiol_profile.densities+ld_toluene_profile.densities)/6.022e23*1e-6, line = dict(color = "black"),row = 2, col = 1)# fillcolor="#448CC4")
 
     densityPLot.update_layout(template = "simple_white",
                               #showlegend = False, 
-                              width = 300*2, height = 300*1.4)
-    densityPLot.update_xaxes(range = [0, 34e-10], title = "radial distance /nm")
-    densityPLot.update_yaxes(title = "H density")
+                              width = 300*1.7, height = 300*2.8,
+                             showlegend = False)
+    densityPLot.update_xaxes(range = [0, 3.4], title = "radial distance /nm")
+    densityPLot.update_yaxes(title = "H density / mol⋅mL<sup>-1</sup>", range = [0, 5.5e29/6.022e23*1e-6], showline = False)
     densityPLot.show()
+    densityPLot.write_image("densityPlotPub.svg")
     return (
         hd_dodecanethiol_profile,
         hd_toluene_profile,
@@ -503,7 +524,7 @@ def _(
         D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
 
 
-    density_choice = "LD"
+    density_choice = "HD"
     if density_choice == "HD":
         solvent_density_obj = hd_toluene_profile
         ligand_density_obj = hd_dodecanethiol_profile
@@ -794,7 +815,7 @@ def _(
     report_plot.update_xaxes(title = "frequency /Hz", row = 3, col = 1)
     report_plot.show()
     report_plot.write_html("high density all sizes.html")
-    return
+    return (report_plot,)
 
 
 @app.cell
@@ -987,6 +1008,41 @@ def _(
 
 
 @app.cell
+def _(
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneH_spectra,
+    go,
+    len1,
+    len2,
+    report_plot,
+    triple_spetra_fit,
+):
+    pubfit = go.Figure(report_plot)
+    pubcolors = ["#5DAB0E", "#94B7D4", "#BB6F35"]
+
+    pubfit.update_traces(selector = 0, line = dict(color = "#5DAB0E", width = 5))
+    pubfit.update_traces(selector = 1, line = dict(color = "white", width = 3))
+    pubfit.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black", width = 1), showlegend = False, col = 1, row = 1)
+
+    pubfit.update_traces(selector = 2, line = dict(color = "#94B7D4", width = 5))
+    pubfit.update_traces(selector = 3, line = dict(color = "white", width = 3))
+    pubfit.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "black", width = 1), showlegend = False, col = 1, row = 2)
+
+    pubfit.update_traces(selector = 4, line = dict(color = "#BB6F35", width = 5))
+    pubfit.update_traces(selector = 5, line = dict(color = "white", width = 3))
+    pubfit.add_scatter(x = dodecaneD_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "black", width = 1), showlegend = False, col = 1, row = 3)
+
+    pubfit.layout.annotations = [] # clear annotations
+
+    pubfit.update_yaxes(range = [-0.05,1.05], tickvals = [0, 1])
+    pubfit.update_yaxes(title = "noramlized intensity", row = 2, col = 1)
+
+    pubfit.update_layout(width = 300*2, height = 300*3)
+    pubfit.show()
+    return
+
+
+@app.cell
 def _(make_subplots, np):
     R_max_plots = make_subplots()
     R_max_plots.add_scatter(
@@ -998,7 +1054,21 @@ def _(make_subplots, np):
 
 
 @app.cell
-def _():
+def _(make_subplots, np):
+    # plot wavefunction
+    wave_x = np.linspace(0, 8, 1000)
+    wavefunction_plot = make_subplots()
+
+    wavefunction_plot.add_scatter(x = wave_x, y = (1+np.exp((wave_x - 1.5)/0.5))**-1, line = dict(color = "#5DAB0E"), fill = "tozeroy")
+    wavefunction_plot.add_scatter(x = [0, 0], y = [-0.05, 1.05], mode = "lines", line= dict(color = "#5DAB0E", dash = "dash"))
+    wavefunction_plot.add_scatter(x = [1.5, 1.5], y = [-0.05, 1.05], mode = "lines", line= dict(color = "#5DAB0E", dash = "dash"))
+
+    wavefunction_plot.update_xaxes(showline = False, ticks = "", showticklabels = False)
+    wavefunction_plot.update_yaxes(showline = False, ticks = "", showticklabels = False)
+    wavefunction_plot.update_layout(template = "simple_white", showlegend = False)
+    wavefunction_plot.show()
+    #wavefunction_plot.write_image("wavefunction.svg")
+
     return
 
 

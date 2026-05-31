@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.21.1"
+__generated_with = "0.19.9"
 app = marimo.App(width="medium")
 
 
@@ -23,12 +23,15 @@ def _():
     import pandas as pd
     from statsmodels.stats.multicomp import pairwise_tukeyhsd
     #from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+    image_folder = '/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/JackieSharkSkin/fouling'
     return (
         Image,
         Minimizer,
         Parameters,
         Path,
         go,
+        image_folder,
         make_subplots,
         norm,
         np,
@@ -41,14 +44,15 @@ def _():
 
 
 @app.cell
-def _(get_class_coverage, np, patterns, samples):
+def _(get_class_coverage, image_folder, np, patterns, samples):
     # washed analysis
+
     washed_clear_fracs = []
     for _pattern in patterns:
         _temp_frac_clear = []
 
         for _sample in samples:
-            _image_path = f"./retraining_fouling/{_pattern}/washed/{_pattern}_washed{_sample}_segmented.jpg"
+            _image_path = f"{image_folder}/retraining_fouling/{_pattern}/washed/{_pattern}_washed{_sample}_segmented.jpg"
             try:
                 _temp_frac_clear.append(get_class_coverage(_image_path)[0])
             except:
@@ -93,7 +97,7 @@ def _():
 
 
 @app.cell
-def _(Path, get_class_coverage):
+def _(Path, get_class_coverage, image_folder):
     patterns = ["flat", "small", "large"]
     samples = ["a", "b", "c", "d"]
     all_coverage = {} # Renamed to avoid collision
@@ -102,7 +106,7 @@ def _(Path, get_class_coverage):
     for _pattern in patterns:
         all_coverage[_pattern] = {}
         for _week in range(1, 13):
-            folder = Path(f"./{root}/{_pattern}/week{_week}")
+            folder = Path(f"{image_folder}/{root}/{_pattern}/week{_week}")
             for _sample in samples:
                 image_path = folder / f"{_pattern}_{_week}{_sample}_segmented.jpg"
 
@@ -273,7 +277,7 @@ def _(colors, make_subplots, np, timePlot):
     ave_timePlot.update_layout(template = "simple_white", paper_bgcolor = "rgba(0,0,0,0)", width = 600, height = 400)
     ave_timePlot.show()
     ave_timePlot.write_image("/Users/benjaminlear/Library/CloudStorage/OneDrive-ThePennsylvaniaStateUniversity/publicationsData/JackieSharkSkin/fouling/processingReults/timeseries.svg")
-    return
+    return (ave_timePlot,)
 
 
 @app.cell
@@ -419,7 +423,7 @@ def _(
 
         total_params = Parameters()
         total_params.add('k_tot', value = 0.5, min = 0)
-        total_params.add("T0", value = 0.01, min = 0)
+        total_params.add("T0", value = 0.001, min = 0, vary = True)
 
         total_minner = Minimizer(total_growth_objective, total_params, fcn_args=(np.array(weeks_to_fit), total_coverage_to_fit))
         total_result = total_minner.minimize()
@@ -435,6 +439,36 @@ def _(
     print(pairwise_z_test(fit_result_dict, param_name="k2"))
 
     print(pairwise_z_test(total_fit_result_dict, param_name="k_tot"))
+    return (total_fit_result_dict,)
+
+
+@app.cell
+def _(ave_timePlot, colors, go, np, total_fit_result_dict):
+    # make the plot that shows the data for the total coverage and the fits
+    total_fits_plot = go.Figure(ave_timePlot)
+    total_fits_plot.update_traces(mode = "markers")
+
+    t_plot = np.linspace(0, 12, 1000)
+    for _sample, _color in zip(total_fit_result_dict, colors):
+        if 'k_tot' in total_fit_result_dict[_sample].params:
+                    k_tot = total_fit_result_dict[_sample].params['k_tot'].value
+                    T0 = total_fit_result_dict[_sample].params['T0'].value
+                    K = 1.0 # Carrying capacity
+        
+                    # Analytical Logistic Solution
+                    fit_curve = K / (1 + ((K - T0) / (T0 + 1e-9)) * np.exp(-k_tot * t_plot))
+                    #residuals = data_1 - fit_at_data
+        
+                    total_fits_plot.add_scatter(x=t_plot, y=fit_curve, mode='lines', name='Total Fit', 
+                                             line=dict(color=f"rgb{_color}", width=3), row=1, col=1, showlegend=False)
+                    # Residuals
+                    #total_fits_plot.add_trace(go.Scatter(x=t_full, y=residuals, mode='markers', name='Res.', 
+                     #                        marker=dict(color='blue', symbol='x')), row=1, col=1)
+
+
+    total_fits_plot.show()
+    total_fits_plot.write_image("time_course_plot_with_fit.svg")
+    print(total_fit_result_dict)
     return
 
 
