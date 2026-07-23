@@ -590,7 +590,7 @@ def fitting(
             ("c2", c2_guess, False, None, None),
             ("c3", c3_guess, False, None, None), # final background for each spectra   
 
-            ("nu_n", nu_n_guess, False, None, None), # in Hz
+            ("nu_n", nu_n_guess-50000, True, None, None), # in Hz
 
             ("I_scale", 10*I_scale_guess, True, 0, None), # for non-B type, try 41
             ("ell", 1.5*ell_guess, True, 0, None), # bring in as nm
@@ -692,6 +692,9 @@ def fit_report(csv):
 
 @app.cell
 def _(
+    LDSH_color,
+    LHSD_color,
+    LHSH_color,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
     dodecaneH_tolueneH_spectra,
@@ -705,31 +708,102 @@ def _(
     fit_nu = triple_spetra_fit.params["nu_n"].value
 
 
-    fitplot = make_subplots(rows = 4, cols = 1, subplot_titles= ["solvent-H + ligand-H", "solvent-H + ligand-D", "solvent-D + ligand-H"])
-    fitplot.update_layout(template = "simple_white", width = 500, height = 500)
+    fitplot = make_subplots(rows = 4, cols = 1, subplot_titles= ["solvent-H + ligand-H", "solvent-H + ligand-D", "solvent-D + ligand-H", "comparison of fits"])
+    fitplot.update_layout(template = "simple_white", width = 500, height = 800)
 
-    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1], line = dict(color = "#ffabff", width = 5), showlegend = False, col = 1, row = 1)
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1], line = dict(color = LHSH_color, width = 5), showlegend = False, col = 1, row = 1)
     fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black"), showlegend = False, col = 1, row = 1)
 
-    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= dodecaneD_tolueneH_spectra[1], line = dict(color = "#ffabac", width = 5), showlegend = False, col = 1, row = 2)
+    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= dodecaneD_tolueneH_spectra[1], line = dict(color = LDSH_color, width = 5), showlegend = False, col = 1, row = 2)
     fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "black"), showlegend = False, col = 1, row = 2)
 
-    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= dodecaneH_tolueneD_spectra[1], line = dict(color = "#ababff", width = 5), showlegend = False, col = 1, row = 3)
+    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= dodecaneH_tolueneD_spectra[1], line = dict(color = LHSD_color, width = 5), showlegend = False, col = 1, row = 3)
     fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "black"), showlegend = False, col = 1, row = 3)
 
     #add normalized spectra
-    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[:len1] - triple_spetra_fit.params["c1"].value)/np.max((triple_spetra_fit.best_fit[:len1] - triple_spetra_fit.params["c1"].value)), line = dict(color = "#ffabff", width = 3), showlegend = False, col = 1, row = 4)
-    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[len1:len1+len2] - triple_spetra_fit.params["c2"].value)/np.max(triple_spetra_fit.best_fit[len1:len1+len2] - triple_spetra_fit.params["c2"].value), line = dict(color = "#ffabac", width = 3), showlegend = False, col = 1, row = 4)
-    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value)/np.max(triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value), line = dict(color = "#ababff", width = 3), showlegend = False, col = 1, row = 4)
+    fitplot.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[:len1] - triple_spetra_fit.params["c1"].value)/np.max((triple_spetra_fit.best_fit[:len1] - triple_spetra_fit.params["c1"].value)), line = dict(color = LHSH_color, width = 3), showlegend = False, col = 1, row = 4)
+    fitplot.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[len1:len1+len2] - triple_spetra_fit.params["c2"].value)/np.max(triple_spetra_fit.best_fit[len1:len1+len2] - triple_spetra_fit.params["c2"].value), line = dict(color = LDSH_color, width = 3), showlegend = False, col = 1, row = 4)
+    fitplot.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= (triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value)/np.max(triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"].value), line = dict(color = LHSD_color, width = 3), showlegend = False, col = 1, row = 4)
 
 
     fitplot.update_xaxes(title = "frequency /MHz", row = 4, col = 1)
     fitplot.show()
-    return
+    return (fit_nu,)
 
 
 @app.cell
-def hd_binned_contact_dipolar():
+def _():
+    pub_dpi = 300
+    main_width = 1.7 *pub_dpi#inch *300 dpi
+    main_height = 3.6 *pub_dpi#inch * 300dpi
+    main_margin = dict(l = 0, r = 0, t = 0, b = 0)
+    LHSH_color = "#715472"
+    LHSD_color = "#B66C34"
+    LDSH_color = "#448CC4"
+    return (
+        LDSH_color,
+        LHSD_color,
+        LHSH_color,
+        main_height,
+        main_margin,
+        main_width,
+    )
+
+
+@app.cell
+def fitting_pub_figure(
+    LDSH_color,
+    LHSD_color,
+    LHSH_color,
+    dodecaneD_tolueneH_spectra,
+    dodecaneH_tolueneD_spectra,
+    dodecaneH_tolueneH_spectra,
+    fit_nu,
+    len1,
+    len2,
+    main_height,
+    main_margin,
+    main_width,
+    make_subplots,
+    triple_spetra_fit,
+):
+
+
+
+    mainPub = make_subplots(rows = 3, cols = 1, )
+
+    mainPub.update_layout(
+        template = "simple_white",
+        width = main_width, height = main_height,
+        margin = main_margin,
+        font = dict(size = 30)
+    )
+
+    mainPub.update_xaxes(range = [-4e6, 4e6], linewidth = 4, tickwidth = 4, ticklen = 12)
+    mainPub.update_yaxes(range = [-0.2, 1.09], dtick = 1, ticks = "", showticklabels = False, showline = False,  )
+
+
+    mainPub.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1] - triple_spetra_fit.best_fit[:len1], line = dict(color = "lightgrey", width = 4), showlegend = False, col = 1, row = 1)
+    mainPub.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1], line = dict(color = LHSH_color, width = 10), showlegend = False, col = 1, row = 1)
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[:len1], line = dict(color = "white", width = 8), showlegend = False, col = 1, row = 1)
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black", width = 4), showlegend = False, col = 1, row = 1)
+
+
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= dodecaneD_tolueneH_spectra[1] - triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "lightgrey", width = 4), showlegend = False, col = 1, row = 2)
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= dodecaneD_tolueneH_spectra[1], line = dict(color = LDSH_color, width = 10), showlegend = False, col = 1, row = 2)
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "white", width = 8), showlegend = False, col = 1, row = 2)
+    mainPub.add_scatter(x = dodecaneD_tolueneH_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1:len1+len2], line = dict(color = "black", width = 4), showlegend = False, col = 1, row = 2)
+
+
+    mainPub.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1] - triple_spetra_fit.best_fit[:len1], line = dict(color = "lightgrey", width = 4), showlegend = False, col = 1, row = 3)
+    mainPub.add_scatter(x = dodecaneH_tolueneH_spectra[0] - fit_nu, y= dodecaneH_tolueneH_spectra[1] - triple_spetra_fit.best_fit[:len1], line = dict(color = "lightgrey", width = 4), showlegend = False, col = 1, row = 1)
+    mainPub.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= dodecaneH_tolueneD_spectra[1], line = dict(color = LHSD_color, width = 10), showlegend = False, col = 1, row = 3)
+    mainPub.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "white", width = 8), showlegend = False, col = 1, row = 3)
+    mainPub.add_scatter(x = dodecaneH_tolueneD_spectra[0] - fit_nu, y= triple_spetra_fit.best_fit[len1+len2:], line = dict(color = "black", width = 4), showlegend = False, col = 1, row = 3)
+    mainPub.update_xaxes(row = 3, col = 1, title = "A /Hz")
+
+
+    mainPub.show()
     return
 
 
@@ -823,10 +897,10 @@ def sim_setup(
         H_np = [np.array([1.272975688, 1.405767063, 1.538558438, 1.671349814, 1.804141189, 1.936932564, 2.06972394, 2.202515315, 2.33530669, 2.468098066, 2.600889441, 2.733680816, 2.866472192, 2.999263567, 3.132054942, 3.264846318, 3.397637693, 3.530429068, 3.663220444, 3.796011819, 3.928803194, 4.06159457, 4.194385945, 4.32717732, 4.459968696, 4.592760071, 4.725551446, 4.858342822, 4.991134197, 5.123925572, 5.256716947, 5.389508323, 5.522299698, 5.655091073, 5.787882449, 5.920673824, 6.053465199, 6.186256575,])*1e-9/2, [4, 1, 2, 1, 0, 4, 1, 11, 17, 49, 82, 83, 81, 59, 55, 36, 29, 20, 25, 8, 3, 6, 10, 5, 1, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,]]
         D_np = [np.array([1.541959469, 1.728658408, 1.915357347, 2.102056286, 2.288755225, 2.475454163, 2.662153102, 2.848852041, 3.03555098, 3.222249919, 3.408948858, 3.595647796, 3.782346735, 3.969045674, 4.155744613, 4.342443552, 4.52914249, 4.715841429, 4.902540368, 5.089239307,])*1e-9/2, [14, 32, 65, 55, 61, 67, 46, 40, 26, 21, 11, 6, 8, 1, 2, 2, 0, 0, 0, 1,]]#
 
-    elif size_handling_selector.value == "individual":
+    elif size_handling_selector.value == "indivdually":
         H_np = [r_Hs*1e-9/2, np.ones_like(r_Hs)]
         D_np = [r_Ds*1e-9/2, np.ones_like(r_Ds)]
-    elif size_handling_selector.value == "mean": 
+    elif size_handling_selector.value == "single mean": 
         H_np = [[2.87e-9/2],[1.0]] # bin center in m, frequency
         D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
     else:
