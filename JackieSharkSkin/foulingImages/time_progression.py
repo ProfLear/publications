@@ -374,13 +374,13 @@ def _(
     all_coverage,
     colors,
     np,
-    objective,
+    objective_w_error,
     pairwise_z_test,
     patterns,
     plot_biofilm_plotly,
     report_fit,
     samples,
-    total_growth_objective,
+    total_growth_objective_w_error,
 ):
     # this approach fits a line to all the points at once, per pattern. 
 
@@ -391,6 +391,7 @@ def _(
         total_coverage_to_fit = [0, 0, 0, 0]
         sparse_coverage_to_fit = [0, 0, 0, 0]
         dense_coverage_to_fit = [0, 0, 0, 0]
+        total_errors = [0.001, 0.001, 0.001, 0.001] # a floor on the errors. 
 
         for _week in all_coverage[_pattern]:
             for _sample in samples: # go through a, b, c, d
@@ -401,7 +402,13 @@ def _(
                 except:
                     pass
 
-        total_coverage_to_fit = np.array(sparse_coverage_to_fit)+np.array(dense_coverage_to_fit) # get the total coverage. 
+            total_coverage_to_fit = np.array(sparse_coverage_to_fit)+np.array(dense_coverage_to_fit) # get the total coverage.
+            current_error = np.std(total_coverage_to_fit[-4:])
+            for _i in range(4): # go through a, b, c, d
+                if current_error > 0.001:
+                    total_errors.append(current_error)
+                else:
+                    total_errors.append(0.001)
 
         # --- Fit ---
         params = Parameters()
@@ -410,7 +417,7 @@ def _(
         params.add('B0', value=0.01, vary=True) # Initial seeding %
         params.add('C0', value=0.0, vary=False)      # Assume no dense film at start
 
-        minner = Minimizer(objective, params, fcn_args=(weeks_to_fit, sparse_coverage_to_fit, dense_coverage_to_fit))
+        minner = Minimizer(objective_w_error, params, fcn_args=(weeks_to_fit, sparse_coverage_to_fit, dense_coverage_to_fit, total_errors))
         result = minner.minimize()
         report_fit(result)
 
@@ -422,10 +429,13 @@ def _(
 
 
         total_params = Parameters()
-        total_params.add('k_tot', value = 0.5, min = 0)
+        total_params.add('k_tot', value = 3, min = 0)
         total_params.add("T0", value = 0.001, min = 0, vary = True)
+        total_params.add("K", value = 0.999, max = 1, vary = True)
 
-        total_minner = Minimizer(total_growth_objective, total_params, fcn_args=(np.array(weeks_to_fit), total_coverage_to_fit))
+    
+        print(total_errors)
+        total_minner = Minimizer(total_growth_objective_w_error, total_params, fcn_args=(np.array(weeks_to_fit), total_coverage_to_fit, total_errors))
         total_result = total_minner.minimize()
         report_fit(total_result)
 
@@ -454,21 +464,32 @@ def _(ave_timePlot, colors, go, np, total_fit_result_dict):
                     k_tot = total_fit_result_dict[_sample].params['k_tot'].value
                     T0 = total_fit_result_dict[_sample].params['T0'].value
                     K = 1.0 # Carrying capacity
-        
+
                     # Analytical Logistic Solution
                     fit_curve = K / (1 + ((K - T0) / (T0 + 1e-9)) * np.exp(-k_tot * t_plot))
                     #residuals = data_1 - fit_at_data
-        
-                    total_fits_plot.add_scatter(x=t_plot, y=fit_curve, mode='lines', name='Total Fit', 
-                                             line=dict(color=f"rgb{_color}", width=3), row=1, col=1, showlegend=False)
+
+                    total_fits_plot.add_scatter(x=t_plot, y=fit_curve, mode='lines', name=f'{_sample}, k = {k_tot:0.2f}±{total_fit_result_dict[_sample].params['k_tot'].stderr:0.2f}', 
+                                             line=dict(color=f"rgb{_color}", width=3), row=1, col=1, showlegend=True)
                     # Residuals
                     #total_fits_plot.add_trace(go.Scatter(x=t_full, y=residuals, mode='markers', name='Res.', 
                      #                        marker=dict(color='blue', symbol='x')), row=1, col=1)
 
+    for _i in range(3):
+        total_fits_plot.update_traces(showlegend = False, selector=_i)
+
+    total_fits_plot.update_layout(legend = dict(x = 1, y = 0, xanchor = "right"))
 
     total_fits_plot.show()
     total_fits_plot.write_image("time_course_plot_with_fit.svg")
     print(total_fit_result_dict)
+    return
+
+
+@app.cell
+def _():
+    # fit the mean + standard deviation data together to a logistic model that lets the floor and ceiling float. 
+
     return
 
 
@@ -639,6 +660,32 @@ def _(np, odeint):
 
         return np.concatenate([res_B, res_C])
 
+    def objective_w_error(params, t_full, data_B, data_C, errors):
+        # Extract the FLOAT values from the Parameter objects
+        k1_val = params['k1'].value
+        k2_val = params['k2'].value
+        B0_val = params['B0'].value
+        C0_val = params['C0'].value
+
+        # 1. Get unique timepoints
+        t_unique = np.unique(t_full)
+
+        # 2. Pass the FLOAT values to the solver, not the Parameter objects
+        sol_unique = solve_model(t_unique, k1_val, k2_val, B0_val, C0_val)
+
+        # 3. Map results back to the full time array
+        mapping = {t: i for i, t in enumerate(t_unique)}
+        indices = [mapping[t] for t in t_full]
+
+        pred_B = sol_unique[indices, 0]
+        pred_C = sol_unique[indices, 1]
+
+        # Calculate residuals
+        res_B = pred_B - data_B
+        res_C = pred_C - data_C
+
+        return np.concatenate([res_B/errors, res_C/errors])
+
 
 
     def total_growth_objective(params, t_full, total_data):
@@ -655,7 +702,31 @@ def _(np, odeint):
 
         return prediction - total_data
 
-    return objective, solve_model, total_growth_objective
+    def total_growth_objective_w_error(params, t_full, total_data, errors):
+        '''
+        This function models just the total coverage, weighted by the standard error of each time point.
+        So adding together thin (sparse) and thick (dense)
+        '''
+        k_tot = params['k_tot'].value
+        T0 = params['T0'].value
+        K = params['K'].value  # Floating maximum parameter
+
+        # Analytical solution to the Logistic Equation:
+        # T(t) = K / (1 + ((K - T0)/T0) * exp(-k*t))
+        prediction = K / (1 + ((K - T0)/T0) * np.exp(-k_tot * t_full))
+
+        # Calculate raw residuals
+        residuals = prediction - total_data
+
+        # Divide by the standard error array to weight the fit
+        return residuals / errors
+
+    return (
+        objective,
+        objective_w_error,
+        solve_model,
+        total_growth_objective_w_error,
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,132 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.9.0
+2 info using node@v24.14.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/benjaminlear/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm install @google/gemini-cli@0.46.0
+7 verbose argv "install" "--global" "@google/gemini-cli@0.46.0"
+8 verbose logfile logs-max:10 dir:/Users/benjaminlear/GitHub/publications/KristenPulse/.npm-cache/_logs/2026-06-12T10_58_08_056Z-
+9 verbose logfile /Users/benjaminlear/GitHub/publications/KristenPulse/.npm-cache/_logs/2026-06-12T10_58_08_056Z-debug-0.log
+10 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+11 silly logfile done cleaning log files
+12 silly idealTree buildDeps
+13 silly fetch manifest @google/gemini-cli@0.46.0
+14 silly packumentCache full:https://registry.npmjs.org/@google%2fgemini-cli cache-miss
+15 http fetch GET 200 https://registry.npmjs.org/@google%2fgemini-cli 310ms (cache miss)
+16 silly packumentCache full:https://registry.npmjs.org/@google%2fgemini-cli set size:undefined disposed:false
+17 silly placeDep ROOT @google/gemini-cli@0.46.0 OK for:  want: 0.46.0
+18 silly fetch manifest node-pty@^1.0.0
+19 silly packumentCache full:https://registry.npmjs.org/node-pty cache-miss
+20 silly fetch manifest @github/keytar@^7.10.6
+21 silly packumentCache full:https://registry.npmjs.org/@github%2fkeytar cache-miss
+22 silly fetch manifest @lydell/node-pty@1.1.0
+23 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty cache-miss
+24 silly fetch manifest @lydell/node-pty-linux-x64@1.1.0
+25 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 cache-miss
+26 silly fetch manifest @lydell/node-pty-win32-x64@1.1.0
+27 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 cache-miss
+28 silly fetch manifest @lydell/node-pty-darwin-x64@1.1.0
+29 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 cache-miss
+30 silly fetch manifest @lydell/node-pty-win32-arm64@1.1.0
+31 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 cache-miss
+32 silly fetch manifest @lydell/node-pty-darwin-arm64@1.1.0
+33 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 cache-miss
+34 http fetch GET 200 https://registry.npmjs.org/npm 341ms
+35 http fetch GET 200 https://registry.npmjs.org/node-pty 101ms (cache miss)
+36 silly packumentCache full:https://registry.npmjs.org/node-pty set size:undefined disposed:false
+37 http fetch GET 200 https://registry.npmjs.org/@github%2fkeytar 120ms (cache miss)
+38 silly packumentCache full:https://registry.npmjs.org/@github%2fkeytar set size:undefined disposed:false
+39 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty 195ms (cache miss)
+40 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty set size:undefined disposed:false
+41 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 198ms (cache miss)
+42 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-x64 set size:undefined disposed:false
+43 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 204ms (cache miss)
+44 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-darwin-arm64 set size:undefined disposed:false
+45 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 205ms (cache miss)
+46 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-x64 set size:undefined disposed:false
+47 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 206ms (cache miss)
+48 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-arm64 set size:undefined disposed:false
+49 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 206ms (cache miss)
+50 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-win32-x64 set size:undefined disposed:false
+51 silly placeDep node_modules/@google/gemini-cli @github/keytar@7.10.6 OK for: @google/gemini-cli@0.46.0 want: ^7.10.6
+52 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+53 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-darwin-arm64@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+54 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-darwin-x64@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+55 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-linux-x64@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+56 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-win32-arm64@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+57 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-win32-x64@1.1.0 OK for: @google/gemini-cli@0.46.0 want: 1.1.0
+58 silly placeDep node_modules/@google/gemini-cli node-pty@1.1.0 OK for: @google/gemini-cli@0.46.0 want: ^1.0.0
+59 silly fetch manifest node-addon-api@^8.3.0
+60 silly packumentCache full:https://registry.npmjs.org/node-addon-api cache-miss
+61 silly fetch manifest @lydell/node-pty-linux-arm64@1.1.0
+62 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 cache-miss
+63 silly fetch manifest node-addon-api@^7.1.0
+64 silly packumentCache full:https://registry.npmjs.org/node-addon-api cache-miss
+65 http fetch GET 200 https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 71ms (cache miss)
+66 silly packumentCache full:https://registry.npmjs.org/@lydell%2fnode-pty-linux-arm64 set size:undefined disposed:false
+67 http fetch GET 200 https://registry.npmjs.org/node-addon-api 73ms (cache miss)
+68 silly packumentCache full:https://registry.npmjs.org/node-addon-api set size:undefined disposed:false
+69 http fetch GET 200 https://registry.npmjs.org/node-addon-api 82ms (cache miss)
+70 silly packumentCache full:https://registry.npmjs.org/node-addon-api set size:undefined disposed:false
+71 silly placeDep node_modules/@google/gemini-cli node-addon-api@8.8.0 OK for: @github/keytar@7.10.6 want: ^8.3.0
+72 silly placeDep node_modules/@google/gemini-cli @lydell/node-pty-linux-arm64@1.1.0 OK for: @lydell/node-pty@1.1.0 want: 1.1.0
+73 silly placeDep node_modules/@google/gemini-cli/node_modules/node-pty node-addon-api@7.1.1 OK for: node-pty@1.1.0 want: ^7.1.0
+74 silly reify mark retired [
+74 silly reify   '/usr/local/lib/node_modules/@google/gemini-cli',
+74 silly reify   '/usr/local/bin/gemini'
+74 silly reify ]
+75 silly reify moves {
+75 silly reify   '/usr/local/lib/node_modules/@google/gemini-cli': '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o',
+75 silly reify   '/usr/local/bin/gemini': '/usr/local/bin/.gemini-7xiPbSuB'
+75 silly reify }
+76 verbose stack Error: EACCES: permission denied, rename '/usr/local/lib/node_modules/@google/gemini-cli' -> '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+76 verbose stack     at async Object.rename (node:internal/fs/promises:782:10)
+76 verbose stack     at async moveFile (/usr/local/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+76 verbose stack     at async Promise.allSettled (index 0)
+76 verbose stack     at async #reifyPackages (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:309:11)
+76 verbose stack     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:121:5)
+76 verbose stack     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:151:5)
+76 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+76 verbose stack     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5)
+77 error code EACCES
+78 error syscall rename
+79 error path /usr/local/lib/node_modules/@google/gemini-cli
+80 error dest /usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o
+81 error errno -13
+82 error Error: EACCES: permission denied, rename '/usr/local/lib/node_modules/@google/gemini-cli' -> '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+82 error     at async Object.rename (node:internal/fs/promises:782:10)
+82 error     at async moveFile (/usr/local/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+82 error     at async Promise.allSettled (index 0)
+82 error     at async #reifyPackages (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:309:11)
+82 error     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:121:5)
+82 error     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:151:5)
+82 error     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+82 error     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5) {
+82 error   errno: -13,
+82 error   code: 'EACCES',
+82 error   syscall: 'rename',
+82 error   path: '/usr/local/lib/node_modules/@google/gemini-cli',
+82 error   dest: '/usr/local/lib/node_modules/@google/.gemini-cli-0qPrCG8o'
+82 error }
+83 error
+83 error The operation was rejected by your operating system.
+83 error It is likely you do not have the permissions to access this file as the current user
+83 error
+83 error If you believe this might be a permissions issue, please double-check the
+83 error permissions of the file and its containing directories, or try running
+83 error the command again as root/Administrator.
+84 silly unfinished npm timer reify 1781261888297
+85 silly unfinished npm timer reify:retireShallow 1781261889042
+86 verbose cwd /Users/benjaminlear/GitHub/publications/KristenPulse
+87 verbose os Darwin 25.5.0
+88 verbose node v24.14.0
+89 verbose npm  v11.9.0
+90 notice
+90 notice New minor version of npm available! 11.9.0 -> 11.17.0
+90 notice Changelog: https://github.com/npm/cli/releases/tag/v11.17.0
+90 notice To update run: npm install -g npm@11.17.0
+90 notice  { force: true, Symbol(proc-log.meta): true }
+91 verbose exit -13
+92 verbose code -13
+93 error A complete log of this run can be found in: /Users/benjaminlear/GitHub/publications/KristenPulse/.npm-cache/_logs/2026-06-12T10_58_08_056Z-debug-0.log

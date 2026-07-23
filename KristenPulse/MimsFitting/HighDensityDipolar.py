@@ -25,6 +25,19 @@ def _():
     return Model, go, make_subplots, mh, mo, np, pp, reload
 
 
+@app.cell
+def _():
+    from datetime import datetime
+
+    # Get today's date
+    today = datetime.today()
+
+    # Format it as YYYYMMDD
+    formatted_date = today.strftime('%Y%m%d')
+
+    return (formatted_date,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
@@ -58,9 +71,9 @@ def _(make_subplots, np):
     normalize = True
     if normalize:
         dodecaneH_tolueneH_spectra[1] = (dodecaneH_tolueneH_spectra[1] - np.mean(dodecaneH_tolueneH_spectra[1][:10]))/np.max((dodecaneH_tolueneH_spectra[1] - np.mean(dodecaneH_tolueneH_spectra[1][:10])))
-    
+
         dodecaneD_tolueneH_spectra[1] = (dodecaneD_tolueneH_spectra[1] - np.mean(dodecaneD_tolueneH_spectra[1][:10]))/np.max((dodecaneD_tolueneH_spectra[1] - np.mean(dodecaneD_tolueneH_spectra[1][:10])))
-    
+
         dodecaneH_tolueneD_spectra[1] = (dodecaneH_tolueneD_spectra[1] - np.mean(dodecaneH_tolueneD_spectra[1][:10]))/np.max((dodecaneH_tolueneD_spectra[1] - np.mean(dodecaneH_tolueneD_spectra[1][:10])))
 
     # can also crop out x-values...
@@ -70,11 +83,11 @@ def _(make_subplots, np):
         mask = (dodecaneH_tolueneH_spectra[0] >= -mask_limit) & (dodecaneH_tolueneH_spectra[0] <= mask_limit)
         trimmed_HH_frequency = dodecaneH_tolueneH_spectra[0][mask]
         trimmed_HH_intensity = dodecaneH_tolueneH_spectra[1][mask]
-    
+
         mask = (dodecaneD_tolueneH_spectra[0] >= -mask_limit) & (dodecaneD_tolueneH_spectra[0] <= mask_limit)
         trimmed_DH_frequency = dodecaneD_tolueneH_spectra[0][mask]
         trimmed_DH_intensity = dodecaneD_tolueneH_spectra[1][mask]
-    
+
         mask = (dodecaneH_tolueneD_spectra[0] >= -mask_limit) & (dodecaneH_tolueneD_spectra[0] <= mask_limit)
         trimmed_HD_frequency = dodecaneH_tolueneD_spectra[0][mask]
         trimmed_HD_intensity = dodecaneH_tolueneD_spectra[1][mask]
@@ -123,9 +136,20 @@ def _(np):
 
 
 @app.cell
-def _():
+def _(make_subplots, np):
     # read np size data
-    return
+
+
+
+    r_Hs = np.genfromtxt("../TEMdata/Feret_All_PdSC12_fit_report.csv", unpack = True, delimiter = ",", usecols = [0], skip_header=1)
+    r_Ds = np.genfromtxt("../TEMdata/Feret_All_dPdSC12_lognormal.csv", unpack = True, delimiter = ",", usecols = [0], skip_header=1)
+
+    r_plot = make_subplots(rows = 2, cols = 1)
+    r_plot.add_histogram(x = r_Hs, row = 1, col = 1, nbinsx=20)
+    r_plot.add_histogram(x = r_Ds, row = 2, col = 1, nbinsx=20)
+    r_plot.update_xaxes(range = [0, 10])
+    r_plot.show()
+    return r_Ds, r_Hs
 
 
 @app.cell
@@ -297,21 +321,21 @@ def _(np, pp):
                         #print("calculating solvent")
                         y_solvent = pp.simulate_nanoparticle_mims_spectrum(
                             freq, 
-    
+
                             r, 
-    
+
                             solvent_density_obj, 
                             rho_bulk_solvent, 
                             nu_n, 
                             g_n, 
-    
+
                             I_scale, 
                             ell, 
                             g_e, 
-    
+
                             tau, 
                             T_m, 
-    
+
                             R_np_md, 
                             R_max, 
                             target_dr, 
@@ -319,14 +343,14 @@ def _(np, pp):
                             contact_scale, #contact_scale, # set to 0 to turn off for solvent. 
                             blindspot_offset,
                             dipolar_np_scale,
-    
+
                             shape, 
                             eta, 
                             width_scale
                             )
                     else:
                         y_solvent = np.zeros_like(freq)
-    
+
                     # Optimization: Only calculate ligand if it actually contributes
                     if l_weight > 0.00:
                         #print("calculating ligand")
@@ -505,6 +529,8 @@ def _(
     ld_toluene_profile,
     np,
     pp,
+    r_Ds,
+    r_Hs,
     reload,
 ):
     reload(pp)
@@ -515,16 +541,22 @@ def _(
     len2 = len(dodecaneD_tolueneH_spectra[0])
 
     # set up the experimental sizes. all_sizes is a flag to use distributions, rather than mean sizes
-    all_sizes = True
-    if all_sizes:
+    sizes = "all"  # options: mean, hist, all
+    if sizes == "hist":
         H_np = [np.array([1.272975688, 1.405767063, 1.538558438, 1.671349814, 1.804141189, 1.936932564, 2.06972394, 2.202515315, 2.33530669, 2.468098066, 2.600889441, 2.733680816, 2.866472192, 2.999263567, 3.132054942, 3.264846318, 3.397637693, 3.530429068, 3.663220444, 3.796011819, 3.928803194, 4.06159457, 4.194385945, 4.32717732, 4.459968696, 4.592760071, 4.725551446, 4.858342822, 4.991134197, 5.123925572, 5.256716947, 5.389508323, 5.522299698, 5.655091073, 5.787882449, 5.920673824, 6.053465199, 6.186256575,])*1e-9/2, [4, 1, 2, 1, 0, 4, 1, 11, 17, 49, 82, 83, 81, 59, 55, 36, 29, 20, 25, 8, 3, 6, 10, 5, 1, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1,]]
         D_np = [np.array([1.541959469, 1.728658408, 1.915357347, 2.102056286, 2.288755225, 2.475454163, 2.662153102, 2.848852041, 3.03555098, 3.222249919, 3.408948858, 3.595647796, 3.782346735, 3.969045674, 4.155744613, 4.342443552, 4.52914249, 4.715841429, 4.902540368, 5.089239307,])*1e-9/2, [14, 32, 65, 55, 61, 67, 46, 40, 26, 21, 11, 6, 8, 1, 2, 2, 0, 0, 0, 1,]]#
-    else: 
+
+    elif sizes == "all":
+        H_np = [r_Hs*1e-9/2, np.ones_like(r_Hs)]
+        D_np = [r_Ds*1e-9/2, np.ones_like(r_Ds)]
+    elif sizes == "mean": 
         H_np = [[2.87e-9/2],[1.0]] # bin center in m, frequency
         D_np = [[2.42e-9/2],[1.0]] # bin center in m, frequency
+    else:
+        print("make a choice that exists")
 
 
-    density_choice = "HD"
+    density_choice = "LD"
     if density_choice == "HD":
         solvent_density_obj = hd_toluene_profile
         ligand_density_obj = hd_dodecanethiol_profile
@@ -534,7 +566,7 @@ def _(
 
     rho_bulk_solvent = 4.528e28 # number of hydrogens per cubic m (used to be cubic angstrom)
     rho_bulk_ligand = 0
-  
+
     g_n = 5.5856946893 # from scipy constants
 
     g_e = 2.0 # g-value for the nanoparticles
@@ -559,7 +591,7 @@ def _(
         I1_guess = (np.max(dodecaneH_tolueneH_spectra[1]) - np.min(dodecaneH_tolueneH_spectra[1]))
         I2_guess = (np.max(dodecaneD_tolueneH_spectra[1]) - np.min(dodecaneD_tolueneH_spectra[1]))
         I3_guess = (np.max(dodecaneH_tolueneD_spectra[1]) - np.min(dodecaneH_tolueneD_spectra[1]))
-    
+
         c1_guess = np.mean(dodecaneH_tolueneH_spectra[1][0:10])
         c2_guess = np.mean(dodecaneD_tolueneH_spectra[1][0:10])
         c3_guess = np.mean(dodecaneH_tolueneD_spectra[1][0:10])
@@ -580,7 +612,6 @@ def _(
 
     eta_guess = 0 # unitless
     width_scale_guess = 1 # unitless
-
     return (
         D_np,
         H_np,
@@ -595,6 +626,7 @@ def _(
         c2_guess,
         c3_guess,
         contact_scale_guess,
+        density_choice,
         dipolar_np_scale_guess,
         dipolar_scale_guess,
         ell_guess,
@@ -608,6 +640,7 @@ def _(
         rho_bulk_ligand,
         rho_bulk_solvent,
         shape,
+        sizes,
         solvent_density_obj,
         target_dr,
         tau,
@@ -788,6 +821,7 @@ def _(
 
 @app.cell
 def _(
+    density_choice,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
     dodecaneH_tolueneH_spectra,
@@ -795,6 +829,7 @@ def _(
     len2,
     make_subplots,
     np,
+    sizes,
     triple_spetra_fit,
 ):
     # writing a fit report as a record. 
@@ -814,7 +849,7 @@ def _(
 
     report_plot.update_xaxes(title = "frequency /Hz", row = 3, col = 1)
     report_plot.show()
-    report_plot.write_html("high density all sizes.html")
+    report_plot.write_html(f"{density_choice} {sizes} fit.html")
     return (report_plot,)
 
 
@@ -965,13 +1000,12 @@ def _(
         c1, c2 = coefficients
 
         return c1, c2
-    
+
     co, do = calibrate_spectra_coefficients(
         (contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(contact_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]),
         (dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(dipolar_only_spectra[len1+len2:] - triple_spetra_fit.params["c3"]),
         (triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"])/np.max(triple_spetra_fit.best_fit[len1+len2:] - triple_spetra_fit.params["c3"])
     )
-
     return co, contact_only_spectra, dipolar_only_spectra, do
 
 
@@ -1009,18 +1043,21 @@ def _(
 
 @app.cell
 def _(
+    density_choice,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneH_spectra,
+    formatted_date,
     go,
     len1,
     len2,
     report_plot,
+    sizes,
     triple_spetra_fit,
 ):
     pubfit = go.Figure(report_plot)
-    pubcolors = ["#5DAB0E", "#94B7D4", "#BB6F35"]
+    pubcolors = ["#715472", "#94B7D4", "#BB6F35"]
 
-    pubfit.update_traces(selector = 0, line = dict(color = "#5DAB0E", width = 5))
+    pubfit.update_traces(selector = 0, line = dict(color = "#715472", width = 5))
     pubfit.update_traces(selector = 1, line = dict(color = "white", width = 3))
     pubfit.add_scatter(x = dodecaneH_tolueneH_spectra[0], y= triple_spetra_fit.best_fit[:len1], line = dict(color = "black", width = 1), showlegend = False, col = 1, row = 1)
 
@@ -1039,6 +1076,61 @@ def _(
 
     pubfit.update_layout(width = 300*2, height = 300*3)
     pubfit.show()
+    pubfit.write_image(f"{formatted_date} {density_choice} {sizes} fit.svg")
+    return (pubfit,)
+
+
+@app.cell
+def _(density_choice, formatted_date, make_subplots, pubfit, sizes):
+    import copy
+    pubfit2 = make_subplots(rows = 3, cols = 1, )
+
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[0]), row = 1, col = 1)
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[1]), row = 1, col = 1)
+    pubfit2.update_traces(line = dict(width = 12), selector = 0)
+    pubfit2.update_traces(line = dict(width = 4), selector = 1)
+    #pubfit2.add_trace(copy.deepcopy(pubfit.data[6]), row = 1, col = 1)
+
+    pubfit2.add_scatter(x = pubfit.data[0].x, y = pubfit.data[0].y - pubfit.data[1].y, line = dict(color = "rgba(0, 0, 0, 0.33)"), row = 1, col = 1)
+
+
+
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[2]), row = 2, col = 1)
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[3]), row = 2, col = 1)
+    pubfit2.update_traces(line = dict(width = 12), selector = 3)
+    pubfit2.update_traces(line = dict(width = 4), selector = 4)
+    #pubfit2.add_trace(copy.deepcopy(pubfit.data[7]), row = 3, col = 1)
+
+    pubfit2.add_scatter(x = pubfit.data[2].x, y = pubfit.data[2].y - pubfit.data[3].y,  line = dict(color = "rgba(0, 0, 0, 0.33)"), row = 2, col = 1)
+
+
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[4]), row = 3, col = 1)
+    pubfit2.add_trace(copy.deepcopy(pubfit.data[5]), row = 3, col = 1)
+    pubfit2.update_traces(line = dict(width = 12), selector = 6)
+    pubfit2.update_traces(line = dict(width = 4), selector = 7)
+    #pubfit2.add_trace(copy.deepcopy(pubfit.data[8]), row = 5, col = 1)
+
+    pubfit2.add_scatter(x = pubfit.data[4].x, y = pubfit.data[4].y - pubfit.data[5].y,  line = dict(color = "rgba(0, 0, 0, 0.33)"), row = 3, col = 1)
+
+    for _r in range(1,4,1):
+        pubfit2.update_xaxes(showline = False, row = _r, col = 1)
+        pubfit2.update_yaxes(zeroline = True)
+
+
+
+
+    pubfit2.update_xaxes(range = [-4e6, 4e6])
+    pubfit2.update_xaxes(title = "A /Hz", row = 3, col = 1)
+
+    pubfit2.update_yaxes(nticks = 2, showline = False)
+    pubfit2.update_yaxes(title = "normalized intensity", row = 2, col = 1)
+
+    pubfit2.update_layout(template = "simple_white", showlegend = False, margin = dict(t = 10, b = 50, l = 50, r = 10),plot_bgcolor="#e6e6e6", width = 1.81*300, height = 1.81/1.6*3*300)
+    pubfit2.show()
+
+    pubfit2.write_html(f"{formatted_date} {density_choice} {sizes} fit.html")
+    pubfit2.write_image(f"{formatted_date} {density_choice} {sizes} fit.svg")
+    pubfit2.write_image(f"{formatted_date} {density_choice} {sizes} fit.png")
     return
 
 
@@ -1068,7 +1160,6 @@ def _(make_subplots, np):
     wavefunction_plot.update_layout(template = "simple_white", showlegend = False)
     wavefunction_plot.show()
     #wavefunction_plot.write_image("wavefunction.svg")
-
     return
 
 

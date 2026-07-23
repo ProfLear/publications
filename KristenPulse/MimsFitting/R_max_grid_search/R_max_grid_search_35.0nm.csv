@@ -1,0 +1,27 @@
+FIT STATISTICS
+Data points,858
+Variables,9
+Chi-square,2.135893120745421
+Reduced Chi-square,0.0025157751716671627
+Akaike info crit (AIC),-5126.327087968167
+Bayesian info crit (BIC),-5083.535651072775
+R-squared,0.9328209892900294
+
+FIT PARAMETERS
+Name,Value,Standard Error,Initial Value,Min,Max,Vary,Expression
+I1,0.9140512185806786,0.01754971253161528,1.0,0,inf,True,
+I2,0.6264347832764987,0.015679347052906453,1.0,0,inf,True,
+I3,0.8977930317100897,0.016547165446295926,1.0,0,inf,True,
+c1,0.0,0,0.0,-inf,inf,False,
+c2,0.0,0,0.0,-inf,inf,False,
+c3,0.0,0,0.0,-inf,inf,False,
+nu_n,49958178.3548549,4605.96878803206,49988998.0,-inf,inf,True,
+I_scale,22.690379656169732,8.000785043704685,25.0,0,inf,True,
+ell,2.1556223472884994e-10,3.3812630190680896e-11,4.6232e-10,0,inf,True,
+R_max,5.7700061950605175e-08,2.1383995145686046e-09,3.5e-08,1.5e-09,inf,True,
+dipolar_scale,1.0,0,1.0,0,inf,False,
+contact_scale,1.0,0,1.0,0,inf,False,
+blindspot_offset,6.039968545457075e-05,7.956782593506613e-05,0.0,0,1,True,
+dipolar_np_scale,0.0,0,0.0,0,1,False,
+eta,0.0,0,0.0,0,inf,False,
+width_scale,1.1180961268992449,0.021052851240148523,1.0,0,inf,True,
