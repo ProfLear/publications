@@ -163,5 +163,5 @@ fig.update_layout(
     margin = dict(l = 10, t = 10, r = 10, b = 50),
     font = dict(size = 12, color = "#a9a9a9"),
     )
-fig.show("png")
+fig.show()
 fig.write_image("sentiment.svg")

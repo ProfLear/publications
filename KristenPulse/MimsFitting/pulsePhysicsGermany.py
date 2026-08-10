@@ -144,7 +144,7 @@ def find_R_max(
         A_contact_probe = contact_scale * (2.0/3.0) * common_scalar * (I0 * np.exp(-(r - R_np_exp) / ell) / r)**2
         
         # Dipolar at distance r
-        T_factor_probe = dipolar_scale * (4.0 * np.pi)**-1 * common_scalar * (r**-3) *(1 - (R_np_exp / r)**2)**-3 # last term is for spherical shell
+        T_factor_probe = dipolar_scale * (4.0 * np.pi)**-1 * common_scalar * (r**-3) #*(1 - (R_np_exp / r)**2)**-3 # last term is for spherical shell
 
         # F_dipolar = (1.0 - (R_np_exp / r)**2)**-3
         # T_factor_probe *= F_dipolar

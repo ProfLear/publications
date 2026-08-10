@@ -39,7 +39,8 @@ def constants():
     bulk_toluene_density = 0.0453e30  # number of hydrogens per cubic m (used to be angtroms)
     bulk_dodecanethiol_density = 0 # the density of hydrogens coming from the ligand at r = infinity
     md_r_step = 0.1e-10 # units = m, 
-    return R_np_md, bulk_toluene_density, md_r_step
+    O_S_difference = 0.08e-9 # units of m
+    return O_S_difference, R_np_md, bulk_toluene_density, md_r_step
 
 
 @app.cell
@@ -61,6 +62,7 @@ def process_np_sizes(make_subplots, np):
 
 @app.cell
 def process_md_results(
+    O_S_difference,
     R_np_md,
     bulk_toluene_density,
     make_subplots,
@@ -72,15 +74,15 @@ def process_md_results(
 
     # high density files
     hd_toluene_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/toluene_distances_high_density.csv",
-                                       delimiter = ",")*1e-10 # convert to m
+                                       delimiter = ",")*1e-10 + O_S_difference # convert to m correct for O S distances
     hd_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_high_density.csv",
-                                       delimiter = ",")*1e-10 # convert to m
+                                       delimiter = ",")*1e-10 + O_S_difference # convert to m correct for O S distances
 
     # low density files
     ld_toluene_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/toluene_distances_low_density.csv",
-                                       delimiter = ",")*1e-10 # convert to m
+                                       delimiter = ",")*1e-10 + O_S_difference # convert to m correct for O S distances
     ld_dodecanethiol_distances = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MDSimulationResults/dodecanol_distances_low_density.csv",
-                                       delimiter = ",")*1e-10 # convert to m
+                                       delimiter = ",")*1e-10 +  O_S_difference# convert to m correct for O S distances
 
     # process md data files
 
@@ -157,7 +159,7 @@ def process_exp_spectra(make_subplots, np, nu_n_guess):
 
     dodecaneH_tolueneH_spectra =  np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/PdSC12_Tol MIMS tau140 11730G 10K 9.466690 Q250207_03.csv", delimiter="," ,unpack = True, skip_header = 1)
     dodecaneD_tolueneH_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/dPdSC12_Tol MIMS tau140 11729G 10K 9.517308 Q250325_04_export.csv", delimiter="," ,unpack = True, skip_header = 1)
-    dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter="," ,unpack = True, skip_header = 1)
+    dodecaneH_tolueneD_spectra = np.genfromtxt("/Users/benjaminlear/GitHub/publications/KristenPulse/MimsData/Mims PdSC12 dTol tau 140 10K 43K scans.csv", delimiter=",", unpack = True, skip_header = 1)
 
     # get the number of values in the first two spectra, which is critical for later use in fitting and simulation
     #len1 = len(dodecaneH_tolueneH_spectra[0])
@@ -363,7 +365,6 @@ def sim_compare(
         )
     sim_compare.update_layout(template = "simple_white", height = 700)
     sim_compare.show()
-
     return (sim_compare,)
 
 
@@ -527,7 +528,6 @@ def fitting(
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
     dodecaneH_tolueneH_spectra,
-    ell_guess,
     eta_guess,
     g_e,
     g_n,
@@ -535,7 +535,6 @@ def fitting(
     len2,
     ligand_density_obj,
     np,
-    nu_n_guess,
     pp,
     reload,
     rho_bulk_ligand,
@@ -577,32 +576,32 @@ def fitting(
 
 
 
-    for _nm in np.linspace(0.01, 0.15, 1):
-
+    for _vary in np.linspace(0, .1, 1):
+        print(_vary)
 
         triple_spectra_model_params = triple_spectra_model.make_params()
 
         triple_spectra_model_params.add_many(
-            ("I1", I1_guess, True, 0, None), 
-            ("I2", I2_guess, True, 0, None), 
-            ("I3", I3_guess, True, 0, None), # final intensity for each spectra
+            ("I1", I1_guess*0.91, True, 0, None), 
+            ("I2", I2_guess*0.55, True, 0, None), 
+            ("I3", I3_guess*1, True, 0, None), # final intensity for each spectra
             ("c1", c1_guess, False, None, None), 
             ("c2", c2_guess, False, None, None),
             ("c3", c3_guess, False, None, None), # final background for each spectra   
 
-            ("nu_n", nu_n_guess-50000, True, None, None), # in Hz
+            ("nu_n", 49963664, False, None, None), # in Hz
 
-            ("I_scale", 10*I_scale_guess, True, 0, None), # for non-B type, try 41
-            ("ell", 1.5*ell_guess, True, 0, None), # bring in as nm
+            ("I_scale", I_scale_guess*9.6, True, 0, None), # for non-B type, try 41
+            ("ell", 0.35e-9, True, 0, None), # bring in as nm #1.5*ell_guess
 
-            ('R_max', _nm, False, 0, None), # bring in as nm
+            ('R_max', 0.01, False, 0, None), # bring in as nm
 
             ('dipolar_scale', dipolar_scale_guess, False, 0, None),
             ('contact_scale', contact_scale_guess, False, 0, None),  
-            ('blindspot_offset', 0.05 , False, 0, 1), 
-            ('dipolar_np_scale', 0, False, 0, 1), 
-            ("eta", eta_guess, False, 0, None),
-            ("width_scale", 1, False, 0, None), # or width_scale_guess
+            ('blindspot_offset', 3.98e-4 , False, 0, 1), 
+            ('dipolar_np_scale', 0, False, 0, 1), # repurposed for adjusting center frequency of second peak
+            ("eta", eta_guess, False, 0, None), # repurposed for adjusting center frequency of third peak
+            ("width_scale", 1.13, False, 0, None), # or width_scale_guess  will just scale the width calculated from lifetime
             ) 
 
         # add in parameters for fitting: 
@@ -636,7 +635,7 @@ def fitting(
                 shape = shape,
                 iter_cb=my_callback
             )
-        
+
             #write_fit_results(f"./playingAround/UniformSphereCorrection.csv", triple_spetra_fit)
             print(triple_spetra_fit.fit_report())
             print(f"{_nm}: {triple_spetra_fit.aic}")
@@ -1005,6 +1004,186 @@ def specify_files():
     # change the meaning of R_max, so that it is tied to a particular threshold for A.  But what shoudl that be? 
     # then see if we can take reasonable guesses at things...
     # double check how dipolar coupling is calculated.
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(R_np_md, T_m, make_subplots, np, r_Hs, triple_spetra_fit):
+    import scipy.constants as const
+
+
+    def find_R_max(
+        R_np_exp, ell, I_scale, T_m, width_scale, contact_scale, dipolar_scale, 
+        mu_0, g_e, beta_e, g_n, beta_n, Planck, R_max_cuttoff
+    ):
+        # 1. Target threshold based on linewidth
+        gamma_hz = (1.0 / (2.0 * np.pi * T_m)) * width_scale  
+        threshold = gamma_hz * R_max_cuttoff  # e.g. 5% of homogeneous line width
+
+        # 2. Pre-calculate invariant constants OUTSIDE the loop
+        common_scalar = mu_0 * g_e * beta_e * g_n * beta_n / Planck
+        f = (1.0 + 2.0 * R_np_exp / (3.0 * ell))**-1 
+        I0 = I_scale * f * np.sqrt(2.0 * f / ell)
+
+        # 3. Initialize loop variables
+        dr = 1e-10  # 1 Angstrom steps
+        r = R_np_exp + dr  # Step slightly off surface to avoid F_dipolar singularities
+        shift = gamma_hz
+
+        # 4. Walk outward until shift < threshold (with a 1000 nm safety valve)
+        while shift > threshold and r < 1e-6:
+
+            # Fermi contact at distance r
+            A_contact_probe = contact_scale * (2.0/3.0) * common_scalar * (I0 * np.exp(-(r - R_np_exp) / ell) / r)**2
+
+            # Dipolar at distance r
+            T_factor_probe = dipolar_scale * (4.0 * np.pi)**-1 * common_scalar * (r**-3)# *(1 - (R_np_exp / r)**2)**-3 
+
+            # Max coupling magnitude at theta = 0 (dipolar is 2*T)
+            shift = A_contact_probe + 2.0 * T_factor_probe
+
+            r += dr
+
+        # 5. Return R_max with a fallback minimum bound
+        if r > R_np_exp + 1e-9:
+            return r
+        else:
+            return R_np_exp + 1e-9
+
+
+    def calculate_hyperfine_vs_r(
+        R_np_exp, R_np_md, ell, I_scale, T_m, 
+        width_scale=1, contact_scale=1, dipolar_scale=1, 
+        target_dr=0.1e-10, R_max_cuttoff=0.05
+    ):
+        """
+        Calculates R_max using the provided logic, then extracts the 
+        contact and dipolar hyperfine contributions across the spatial grid.
+        """
+        # --- Physical Constants ---
+        mu_0 = const.mu_0
+        g_e = 2.002319 
+        beta_e = const.physical_constants['Bohr magneton'][0]
+        g_n = 5.585 # Placeholder for 1H
+        beta_n = const.physical_constants['nuclear magneton'][0]
+        Planck = const.h
+
+        # --- 1. Find R_max ---
+        R_max = find_R_max(
+            R_np_exp, ell, I_scale, T_m, width_scale, contact_scale, dipolar_scale, 
+            mu_0, g_e, beta_e, g_n, beta_n, Planck, R_max_cuttoff
+        )
+        print(f"Calculated R_max: {R_max * 1e9:.2f} nm")
+
+        # --- 2. Generate the Spatial Grid ---
+        n_shells = int(np.ceil((R_max - R_np_md) / target_dr))
+        dr = (R_max - R_np_md) / n_shells
+        r_axis = np.linspace(R_np_exp + dr/2, R_np_exp + n_shells*dr - dr/2, n_shells)
+
+        # --- 3. Vectorized Calculations ---
+        common_scalar = mu_0 * g_e * beta_e * g_n * beta_n / Planck
+        f = (1 + 2 * R_np_exp / (3 * ell))**-1 
+        I0 = I_scale * f * np.sqrt(2 * f / ell)
+
+        A_contact = contact_scale * (2/3) * common_scalar * (I0 * np.exp(-(r_axis - R_np_exp) / ell) / r_axis)**2
+
+        # Updated T_factor with spherical shell correction
+        T_factor = dipolar_scale * (4 * np.pi)**-1 * common_scalar * (r_axis**-3) #* (1 - (R_np_exp / r_axis)**2)**-3
+
+        return r_axis, A_contact, T_factor
+
+    # ==========================================
+    # Example Execution and Plotting
+    # ==========================================
+
+    params = {
+        'R_np_exp': (2.87e-9)/2,  # the mean size for the all H sample
+        'R_np_md': R_np_md,
+        'ell': triple_spetra_fit.params["ell"].value,       
+        'I_scale': triple_spetra_fit.params["I_scale"].value,
+        'T_m': T_m,         
+        'width_scale': 1,
+        'R_max_cuttoff': 0.01  # Represents 5% of linewidth threshold
+    }
+
+    # ==========================================
+    # Example Execution and Plotting
+    # ==========================================
+
+
+    A_contact_color = "darkcyan"
+    T_factor_color = "darkred"
+
+    AcomparePlot = make_subplots(rows = 2, cols = 2,)
+
+    line_syles = ["solid", "dot"]
+    A_range = [0.01, 0.01]
+    A_total_range = [0.01, 0.01]
+    size_list = [np.min(r_Hs*1e-9/2), np.max(r_Hs*1e-9/2)]
+
+    for _i, _r in enumerate(size_list): # this allows cycling through multiple values for r_exp
+        params["R_np_exp"] = _r
+        r, A_contact, T_factor = calculate_hyperfine_vs_r(**params)
+
+        # Convert units for visualization (meters -> nanometers, Hz -> MHz)
+        r_nm = (r-_r) * 1e9
+        A_contact_MHz = A_contact / 1e6
+        T_factor_MHz = T_factor / 1e6
+
+
+        if np.log10(np.min([np.min(A_contact_MHz), np.min(T_factor_MHz)])*0.5) < A_range[0]:
+            A_range[0] = np.log10(np.min([np.min(A_contact_MHz), np.min(T_factor_MHz)])*0.5)
+        if np.log10(np.max([np.max(A_contact_MHz), np.max(T_factor_MHz)])*2) > A_range[1]:
+            A_range[1] = np.log10(np.max([np.max(A_contact_MHz), np.max(T_factor_MHz)])*2)
+        #A_range = [np.log10(np.min([np.min(A_contact_MHz), np.min(T_factor_MHz)])), np.log10(np.max([np.max(A_contact_MHz), np.max(T_factor_MHz)])*2)]
+
+
+        if np.log10(np.min(A_contact_MHz + T_factor_MHz)) < A_total_range[0]:
+            A_total_range[0] = np.log10(np.min(A_contact_MHz + T_factor_MHz))
+        if np.log10(np.max(A_contact_MHz+T_factor_MHz)) > A_total_range[1]:
+            A_total_range[1] = np.log10(np.max(A_contact_MHz+T_factor_MHz))
+        #A_total_range = [np.log10(np.min(A_contact_MHz + T_factor_MHz)), np.log10(np.max(A_contact_MHz+T_factor_MHz))]
+
+        minorTicks = dict(ticks="outside", nticks = 10, ticklen=2, tickcolor="black", showgrid=False)
+
+
+
+        AcomparePlot.update_xaxes(row = 1, col = 1, )#title = "r /nm")
+        AcomparePlot.update_yaxes(row = 1, col = 1, type = "log", exponentformat = 'power', title = "A /Mhz", range = A_range, minor = minorTicks, nticks = 10)
+        AcomparePlot.add_scatter(row = 1, col = 1, x = r_nm, y = A_contact_MHz, line = dict(color = A_contact_color, dash = line_syles[_i]))
+        AcomparePlot.add_scatter(row = 1, col = 1, x = r_nm, y = T_factor_MHz, line = dict(color = T_factor_color, dash = line_syles[_i]))
+
+        AcomparePlot.update_xaxes(row = 2, col = 1, title = "distance from nanoparticle surface /nm")
+        AcomparePlot.update_yaxes(row = 2, col = 1, title = "fractional contribution to A<sub>total</sub>", range = [0, 1.01])
+        AcomparePlot.add_scatter(row = 2, col = 1, x = r_nm, y = A_contact_MHz/(A_contact_MHz+T_factor_MHz), line = dict(color = A_contact_color, dash = line_syles[_i]))
+        AcomparePlot.add_scatter(row = 2, col = 1, x = r_nm, y = T_factor_MHz/(A_contact_MHz+T_factor_MHz), line = dict(color = T_factor_color, dash = line_syles[_i]))
+
+
+
+        AcomparePlot.update_xaxes(row = 1, col = 2, type = "log", range = A_total_range, minor = minorTicks)#title = "A_total /Mhz")
+        AcomparePlot.update_yaxes(row = 1, col = 2, type = "log", exponentformat = 'power', minor = minorTicks, range = A_range)#title = "A /Mhz")
+        AcomparePlot.add_scatter(row = 1, col = 2, x = A_contact_MHz+T_factor_MHz, y = A_contact_MHz, line = dict(color = A_contact_color, dash = line_syles[_i]))
+        AcomparePlot.add_scatter(row = 1, col = 2, x = A_contact_MHz+T_factor_MHz, y = T_factor_MHz, line = dict(color = T_factor_color, dash = line_syles[_i]))
+
+        AcomparePlot.update_xaxes(row = 2, col = 2, type = "log", title = "A<sub>total</sub> /Mhz", range = A_total_range, minor = minorTicks)
+        AcomparePlot.update_yaxes(row = 2, col = 2, )#title = "fractional contribution to A_total")
+        AcomparePlot.add_scatter(row = 2, col = 2, x = A_contact_MHz+T_factor_MHz, y = A_contact_MHz/(A_contact_MHz+T_factor_MHz), line = dict(color = A_contact_color, dash = line_syles[_i]))
+        AcomparePlot.add_scatter(row = 2, col = 2, x = A_contact_MHz+T_factor_MHz, y = T_factor_MHz/(A_contact_MHz+T_factor_MHz), line = dict(color = T_factor_color, dash = line_syles[_i]))
+
+        size_labels = ["smallest np", "largest np"]
+
+
+        AcomparePlot.add_annotation(row = 1, col = 2, x = np.log10(np.max(A_contact_MHz+T_factor_MHz)), y = np.log10(np.max(A_contact_MHz)), text = "A<sub>contact</sub><br>"+f"{size_labels[_i]}", showarrow=False, xanchor = "right", yanchor="bottom", font = dict(color = A_contact_color))
+        AcomparePlot.add_annotation(row = 1, col = 2, x = np.log10(np.max(A_contact_MHz+T_factor_MHz)), y = np.log10(np.max(T_factor_MHz)), text = "A<sub>dipolar</sub><br>"+f" {size_labels[_i]}", showarrow=False, xanchor = "center", yanchor="top", font = dict(color = T_factor_color))
+        AcomparePlot.update_layout(template = "simple_white", showlegend = False)
+
+    AcomparePlot.show()
+    #AcomparePlot.write_image("A_compare_plot.png")
     return
 
 
