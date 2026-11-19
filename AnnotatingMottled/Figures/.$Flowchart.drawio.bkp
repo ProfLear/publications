@@ -1,0 +1,120 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="qnI6P0jTikGF-lRenCS1">
+    <mxGraphModel dx="551" dy="413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-1" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-2" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;" value="&lt;span style=&quot;background-color: transparent; color: light-dark(#000000, var(--ge-light-color, #ffffff)); text-decoration-line: inherit;&quot;&gt;annotation idea&lt;/span&gt;" vertex="1">
+          <mxGeometry height="80" width="80" x="230" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-3" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-6" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-4" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-8" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-5" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="can place off&lt;div&gt;image&lt;/div&gt;&lt;div&gt;?&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="80" x="355" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-6" parent="1" style="whiteSpace=wrap;html=1;" value="move off image" vertex="1">
+          <mxGeometry height="60" width="120" x="335" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-7" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-8" parent="1" style="whiteSpace=wrap;html=1;" value="try drop shadows" vertex="1">
+          <mxGeometry height="60" width="120" x="500" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-9" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-12" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-10" parent="1" style="whiteSpace=wrap;html=1;" value="ensure annotation features have a scale different from mottled features" vertex="1">
+          <mxGeometry height="60" width="120" x="660" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-11" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-15" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-12" parent="1" style="whiteSpace=wrap;html=1;" value="consider a low contrast font&lt;div&gt;(Arial, Helvetica, etc.)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="821" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-13" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-17" value="yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-14" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-19" value="no">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-15" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="more than 2 colors?" vertex="1">
+          <mxGeometry height="80" width="80" x="985" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-16" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-17" parent="1" style="whiteSpace=wrap;html=1;" value="consider using small multiples" vertex="1">
+          <mxGeometry height="60" width="120" x="965" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-35" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;" target="GBTKfw5NAeF-JSe8VClo-34" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-19" parent="1" style="whiteSpace=wrap;html=1;" value="use lighter colors as minority species" vertex="1">
+          <mxGeometry height="60" width="120" x="1109" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-20" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;" value="done" vertex="1">
+          <mxGeometry height="80" width="80" x="1567" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-21" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-29" value="yes">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-22" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;defaultLabelBackgroundColor=page;labelPadding=0 4;">
+          <mxGeometry relative="1" x="-0.1208" as="geometry">
+            <Array as="points">
+              <mxPoint x="1473" y="230" />
+              <mxPoint x="335" y="230" />
+            </Array>
+            <mxPoint x="335" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-23" connectable="0" parent="GBTKfw5NAeF-JSe8VClo-22" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="no" vertex="1">
+          <mxGeometry relative="1" x="-0.9818" y="-1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-24" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="&lt;span style=&quot;text-decoration-line: inherit; background-color: transparent; color: light-dark(#000000, var(--ge-light-color, #ffffff));&quot;&gt;annotation&lt;/span&gt;&lt;div&gt;clear&lt;/div&gt;&lt;div&gt;?&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="80" x="1433" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-27" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="">
+          <mxGeometry relative="1" x="-0.5479" as="geometry">
+            <Array as="points">
+              <mxPoint x="1607" y="230" />
+            </Array>
+            <mxPoint x="1475" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-28" connectable="0" parent="GBTKfw5NAeF-JSe8VClo-27" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];inheritText=1;defaultLabelBackgroundColor=page;labelPadding=0 4;" value="no" vertex="1">
+          <mxGeometry relative="1" x="-0.6354" as="geometry">
+            <mxPoint y="11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-37" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;" target="GBTKfw5NAeF-JSe8VClo-20" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-29" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="accessible&lt;div&gt;?&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="80" x="1567" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-30" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.443;entryY=1.019;entryDx=0;entryDy=0;entryPerimeter=0;defaultLabelBackgroundColor=page;labelPadding=0 4;" target="GBTKfw5NAeF-JSe8VClo-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-36" edge="1" parent="1" source="GBTKfw5NAeF-JSe8VClo-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=page;" target="GBTKfw5NAeF-JSe8VClo-24" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GBTKfw5NAeF-JSe8VClo-34" parent="1" style="whiteSpace=wrap;html=1;" value="consider changing to outside the background&#39;s color family" vertex="1">
+          <mxGeometry height="60" width="120" x="1269" y="280" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

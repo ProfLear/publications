@@ -1,0 +1,119 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.25.2",
+    "script_metadata_hash": "13eaaf6acd8b834385e68093f12fce0b"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "3e2be9b1966babeedae452cc095bd01c",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "f8d41f24c96f0ee87fa39db1c7bfbb27",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "4813ef3036d811fc5c80b790f47e32bb",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"1-select-input-image-cropping\">1. Select Input Image &amp; Cropping (%)</h3></span><div style='display: flex;flex: 1;flex-direction: row;justify-content: space-between;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><div style='flex: 1'><marimo-ui-element object-id='vblA-0' random-id='a29aa506-6177-a57b-015a-fccdcf4b39bb'><marimo-dropdown data-initial-value='[&quot;HSVmodifications/lavoisier_met_crop.png&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eSelect workspace image:&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;HSVmodifications/lavoisier_crop_preview.jpg&quot;,&quot;HSVmodifications/lavoisier_cropped_current.png&quot;,&quot;HSVmodifications/lavoisier_met_crop.png&quot;,&quot;HSVmodifications/lavoisier_met_original.jpg&quot;,&quot;HSVmodifications/lavoisier_panel_a.png&quot;,&quot;HSVmodifications/met_crop_test.jpg&quot;,&quot;HSVmodifications/panel_a_raw.png&quot;,&quot;Figures/AllPairswide.png&quot;,&quot;Figures/ArrowSize.png&quot;,&quot;Figures/BlueLuminance.png&quot;,&quot;Figures/Colorblindness.png&quot;,&quot;Figures/FontFamilies.png&quot;,&quot;Figures/HSL explainer .png&quot;,&quot;Figures/HSV demo wide.png&quot;,&quot;Figures/HSVAnnotations.png&quot;,&quot;Figures/HSVsolutions.png&quot;,&quot;Figures/InitialExamples.png&quot;,&quot;Figures/Luminance.png&quot;,&quot;Figures/PatternScale.png&quot;,&quot;Figures/Signature.PNG&quot;,&quot;Figures/Small Multiples.png&quot;,&quot;Figures/university-mark1.jpg&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='true' data-disabled='false'></marimo-dropdown></marimo-ui-element></div><div style='flex: 1'><marimo-ui-element object-id='vblA-1' random-id='075695c6-7075-fc6d-7c94-c2230ec89494'><marimo-file data-initial-value='[]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eOr upload/drop any image file (overrides dropdown when uploaded):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-filetypes='[&quot;.png&quot;,&quot;.jpg&quot;,&quot;.jpeg&quot;,&quot;.tif&quot;,&quot;.tiff&quot;,&quot;.webp&quot;]' data-multiple='false' data-kind='&quot;button&quot;' data-max_size='100000000'></marimo-file></marimo-ui-element></div><div style='flex: 1'><marimo-ui-element object-id='vblA-2' random-id='550f9c0d-ef4d-a36a-9043-506211c45fcc'><marimo-dropdown data-initial-value='[&quot;Fast (600 px)&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eInteractive preview resolution (Export is always full resolution):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;Fast (600 px)&quot;,&quot;Medium (1000 px)&quot;,&quot;Full Resolution&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='false' data-disabled='false'></marimo-dropdown></marimo-ui-element></div></div><div style='display: flex;flex: 1;flex-direction: row;justify-content: space-between;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><div style='flex: 1'><marimo-ui-element object-id='vblA-3' random-id='d09518a8-745e-825e-962c-71fd490bc002'><marimo-slider data-initial-value='0.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eCrop Left (%):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='90.0' data-step='0.5' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element></div><div style='flex: 1'><marimo-ui-element object-id='vblA-4' random-id='abe69ab0-1931-fee8-5941-1ea51c47224b'><marimo-slider data-initial-value='0.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eCrop Right (%):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='90.0' data-step='0.5' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element></div><div style='flex: 1'><marimo-ui-element object-id='vblA-5' random-id='3f417cd1-b9ee-57b2-ed3b-f94a79b86de6'><marimo-slider data-initial-value='0.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eCrop Top (%):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='90.0' data-step='0.5' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element></div><div style='flex: 1'><marimo-ui-element object-id='vblA-6' random-id='42672657-5e37-421b-a441-116c1035e2af'><marimo-slider data-initial-value='0.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eCrop Bottom (%):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='90.0' data-step='0.5' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element></div></div></div>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "3b386f6e7b9a18dad0b3be492877fea9",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "abfe049ef22f8693be4483ad2c0dedbc",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"2-fixed-hsv-parameter-sliders-channel-reversal\">2. Fixed HSV Parameter Sliders &amp; Channel Reversal</h3></span><div style='display: flex;flex: 1;flex-direction: row;justify-content: space-between;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><div style='flex: 1;display: flex;min-width: 0;min-height: 0'><div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><marimo-ui-element object-id='bkHC-0' random-id='6a5fb226-b907-dfdf-2b6e-5019e0282ba9'><marimo-slider data-initial-value='0.08' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eFixed Hue (H):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='1.0' data-step='0.01' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element></div></div><div style='flex: 1;display: flex;min-width: 0;min-height: 0'><div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><marimo-ui-element object-id='bkHC-1' random-id='9ee7ad17-7adc-bcfb-6179-47bb54b4f90b'><marimo-slider data-initial-value='1.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eFixed Saturation (S):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='1.0' data-step='0.01' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element><marimo-ui-element object-id='bkHC-3' random-id='3e8d2548-0e24-7b02-4d0e-0a2da7a9cbb7'><marimo-checkbox data-initial-value='false' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eReverse S (1 \u2212 S)&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-disabled='false'></marimo-checkbox></marimo-ui-element></div></div><div style='flex: 1;display: flex;min-width: 0;min-height: 0'><div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><marimo-ui-element object-id='bkHC-2' random-id='d726c1c1-c875-78a2-bdfe-f8b3927bdc9e'><marimo-slider data-initial-value='1.0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eFixed Value (V):&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.0' data-stop='1.0' data-step='0.01' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='true' data-include-input='false' data-full-width='true'></marimo-slider></marimo-ui-element><marimo-ui-element object-id='bkHC-4' random-id='6099b07e-d4de-fb62-0029-a086c0534234'><marimo-checkbox data-initial-value='false' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eReverse V (1 \u2212 V)&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-disabled='false'></marimo-checkbox></marimo-ui-element></div></div></div>\n    <div style=\"display:flex; align-items:center; gap:16px; padding:10px 14px; border:1px solid #ccc; border-radius:8px; background:#fafafa;\">\n        <div style=\"width:56px; height:56px; border-radius:6px; background:#418040; border:1px solid #333; flex-shrink:0;\"></div>\n        <div style=\"font-size:14px; line-height:1.4;\">\n            <strong>Fixed Reference Color</strong><br/>\n            <code>H = 0.33 (119\u00b0)</code> &nbsp;|&nbsp;\n            <code>S = 0.50 (50%)</code> &nbsp;|&nbsp;\n            <code>V = 0.50 (50%)</code> &nbsp;|&nbsp;\n            <code>Hex: #418040</code>\n        </div>\n    </div>\n    </div>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "fe1798f51fba1eb48455680c4005a9b2",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "9c8c0d4b9b8b08f5502a3bf8a53aaee3",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "07ca9901e6ee385c0864f3a2cc0b408d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"4-export-full-resolution-images\">4. Export Full-Resolution Images</h3></span><marimo-ui-element object-id='SFPL-0' random-id='eefca20b-05b5-2016-167d-7215fec1dc60'><marimo-button data-initial-value='0' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eSave Full-Resolution Images to output/&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-kind='&quot;success&quot;' data-disabled='false' data-full-width='false'></marimo-button></marimo-ui-element></div>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "b28dc50b69b50be3529f92f7853e8094",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\"><strong>Saved 9 full-resolution files</strong> to <code>/Users/benjaminlear/GitHub/publications/AnnotatingMottled/HSVmodifications/output</code> (with <marimo-tex class=\"arithmatex\">||(H=0.33, S=0.50, V=0.50||)</marimo-tex>, <code>reverse_S=False</code>, <code>reverse_V=False</code>):</span>\n<ul>\n<li><code>00_original.png</code></li>\n<li><code>01_SV_fixed_H_varies.png</code></li>\n<li><code>02_HV_fixed_S_varies.png</code></li>\n<li><code>03_HS_fixed_V_varies.png</code></li>\n<li><code>04_SV_vary_H_fixed.png</code></li>\n<li><code>05_HV_vary_S_fixed.png</code></li>\n<li><code>06_HS_vary_V_fixed.png</code></li>\n<li><code>07_black_and_white_luminosity.png</code></li>\n<li><code>composite_hsv_fixed.png</code></li>\n</ul></span>"
+          }
+        }
+      ],
+      "console": []
+    }
+  ]
+}

@@ -422,8 +422,8 @@ def mims_function(np, pp):
 
         # Separate the x-axes
         freq_both =         xs[:len1]
-        freq_solvent_only = xs[len1:len1+len2]
-        freq_ligand_only =  xs[len1+len2:]
+        freq_solvent_only = xs[len1:len1+len2] - dipolar_np_scale
+        freq_ligand_only =  xs[len1+len2:] - eta
 
         # Global container to hold unnormalized raw spectra for relative scaling check
         all_raw_samples = []
@@ -520,15 +520,11 @@ def fitting(
     Model,
     R_np_md,
     T_m,
-    c1_guess,
-    c2_guess,
-    c3_guess,
     contact_scale_guess,
     dipolar_scale_guess,
     dodecaneD_tolueneH_spectra,
     dodecaneH_tolueneD_spectra,
     dodecaneH_tolueneH_spectra,
-    eta_guess,
     g_e,
     g_n,
     len1,
@@ -582,26 +578,29 @@ def fitting(
         triple_spectra_model_params = triple_spectra_model.make_params()
 
         triple_spectra_model_params.add_many(
-            ("I1", I1_guess*0.91, True, 0, None), 
-            ("I2", I2_guess*0.55, True, 0, None), 
-            ("I3", I3_guess*1, True, 0, None), # final intensity for each spectra
-            ("c1", c1_guess, False, None, None), 
-            ("c2", c2_guess, False, None, None),
-            ("c3", c3_guess, False, None, None), # final background for each spectra   
+            ("I1", I1_guess*0.92176994, True, 0, None), 
+            ("I2", I2_guess*0.56563921, True, 0, None), 
+            ("I3", I3_guess*1.03265795, True, 0, None), # final intensity for each spectra
+            ("c1", 0, False, None, None), 
+            ("c2", 0.012, False, None, None),
+            ("c3", -0.007, False, None, None), # final background for each spectra   
 
-            ("nu_n", 49963664, False, None, None), # in Hz
+            ("nu_n", 49938903, False, None, None), # in Hz
 
-            ("I_scale", I_scale_guess*9.6, True, 0, None), # for non-B type, try 41
-            ("ell", 0.35e-9, True, 0, None), # bring in as nm #1.5*ell_guess
+            ("I_scale", I_scale_guess*9.55, True, 0, None), # for non-B type, try 41
+            ("ell", 0.25e-9, True, 0, None), # bring in as nm #1.5*ell_guess
 
             ('R_max', 0.01, False, 0, None), # bring in as nm
 
             ('dipolar_scale', dipolar_scale_guess, False, 0, None),
             ('contact_scale', contact_scale_guess, False, 0, None),  
-            ('blindspot_offset', 3.98e-4 , False, 0, 1), 
-            ('dipolar_np_scale', 0, False, 0, 1), # repurposed for adjusting center frequency of second peak
-            ("eta", eta_guess, False, 0, None), # repurposed for adjusting center frequency of third peak
-            ("width_scale", 1.13, False, 0, None), # or width_scale_guess  will just scale the width calculated from lifetime
+        
+            ('blindspot_offset',  0.0, True, 0, 1), #3.6e-4
+        
+            ('dipolar_np_scale', -7919, True, None, None), # repurposed for adjusting center frequency of second peak
+            ("eta", 64274, True, True, None), # repurposed for adjusting center frequency of third peak
+        
+            ("width_scale", 1*1.11, True, 0, None), # or width_scale_guess  will just scale the width calculated from lifetime
             ) 
 
         # add in parameters for fitting: 
@@ -629,7 +628,7 @@ def fitting(
                 g_n = g_n,
                 g_e = g_e,
                 tau = tau, 
-                T_m = T_m, 
+                T_m = T_m,
                 R_np_md = R_np_md,
                 target_dr = target_dr, 
                 shape = shape,

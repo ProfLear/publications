@@ -99,10 +99,10 @@ def simulate_nanoparticle_mims_spectrum_vectored( # this one is currently workin
     gamma_tm = 1 / (2 * np.pi * T_m) * width_scale 
 
     if shape[0] == "G":
-        sigma = np.sqrt((gamma_tm * 1.0)**2 + (eta * np.mean(np.abs(A))**0.5)**2)
+        sigma = np.sqrt((gamma_tm * 1.0)**2) # no longer need the width stretched + (eta * np.mean(np.abs(A))**0.5)**2)
         kernel = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(-0.5 * (f_kernel / sigma)**2)
     elif shape[0] == "L":
-        gamma = width_scale * np.sqrt(gamma_tm**2 + (eta * np.mean(np.abs(A))**0.5)**2)
+        gamma = width_scale * np.sqrt(gamma_tm**2) # no longer need the width stretched+ (eta * np.mean(np.abs(A))**0.5)**2)
         kernel = (1 / (np.pi * gamma)) * (gamma / (f_kernel**2 + gamma**2))
     else:
         return stick_spectrum 

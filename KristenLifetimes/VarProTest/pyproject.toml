@@ -1,0 +1,16 @@
+[project]
+name = "varprotest"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "lmfit>=1.3.4",
+    "marimo>=0.24.2",
+    "numpy>=2.5.3",
+    "plotly>=7.0.0",
+    "varpropy",
+]
+
+[tool.uv.sources]
+varpropy = { git = "https://github.com/ProfLear/VarProPy.git" }
